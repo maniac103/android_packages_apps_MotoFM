@@ -12,7 +12,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Canvas;
@@ -70,6 +69,8 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     public static final String BIND_SERVICE_SUCCEED = "com.motorola.fmradio.bindservice.succeed";
     public static final String PRESET_CHANGED = "com.motorola.fmradio.preset.changed";
     public static final String SERVICE_STOP = "com.motorola.fmradio.service.stop";
+
+    public static final String PRESET = "preset";
 
     public static final Uri CONTENT_URI = Uri.parse("content://com.motorola.provider.fmradio/FM_Radio");
 
@@ -140,13 +141,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private static final int LONG_PRESS_SEEK_TIMEOUT = 3000;
     private static final int LONG_PRESS_TUNE_TIMEOUT = 50;
     protected static final long SCAN_STOP_DELAY = 1000;
-
-    private static final String FMRADIOENABLED = "fmradioenabled";
-    private static final String FMRADIO_PREF = "FMRADIO_PREF";
-    public static final String FM_PREFER_NAME = "FMRadioMain";
-    private static final String ISSCANED = "isscaned";
-    public static final String PRESET = "preset";
-    public static final String VOLUME = "volume";
 
     private static int lastPosition = 0;
     private static String rds_text_separator = "...";
@@ -235,7 +229,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     };
     private Toast mPowerWaitingTS = null;
     private int mPreFreq = 87500;
-    private SharedPreferences mPref;
     private Integer[] mPresetImgIds_Num = new Integer[] {
         R.drawable.fm_playing_list_0, R.drawable.fm_playing_list_1,
         R.drawable.fm_playing_list_2, R.drawable.fm_playing_list_3,
@@ -427,21 +420,19 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private final Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
-            SharedPreferences pref = getPreferences(0);
+            final Context context = FMRadioMain.this;
             boolean isLandscape = getResources().getConfiguration().orientation == 2;
-            boolean scaned;
             String strPreset;
 
             switch (msg.what) {
                 case START_FMRADIO:
                     // pswitch_0
                     enableUI(true);
-                    getPreferences(0).edit().putBoolean(FMRADIOENABLED, true).commit();
+                    Preferences.setEnabled(context, true);
                     isPerformClick = true;
-                    volume = pref.getInt(VOLUME, volume);
-                    scaned = getPreferences(0).getBoolean(ISSCANED, false);
-                    if (isDBEmpty() || !scaned) {
-                        getPreferences(0).edit().putBoolean(ISSCANED, true).commit();
+                    volume = Preferences.getVolume(context);
+                    if (isDBEmpty() || !Preferences.isScanned(context)) {
+                        Preferences.setScanned(context, true);
                         showDialog(DIALOG_IF_SCAN_FIRST);
                     }
                     break;
@@ -451,7 +442,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     break;
                 case QUIT:
                     // pswitch_2
-                    new AlertDialog.Builder(FMRadioMain.this)
+                    new AlertDialog.Builder(context)
                             .setTitle(R.string.service_start_error_title)
                             .setMessage(R.string.service_start_error_msg)
                             .setPositiveButton(R.string.service_start_error_button, new DialogInterface.OnClickListener() {
@@ -466,20 +457,19 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     break;
                 case FM_OPEN_FAILED:
                     // pswitch_3
-                    getPreferences(0).edit().putBoolean(FMRADIOENABLED, false).commit();
-                    Toast.makeText(FMRadioMain.this, "FMRadio Open failed", Toast.LENGTH_SHORT).show();
+                    Preferences.setEnabled(context, false);
+                    Toast.makeText(context, "FMRadio Open failed", Toast.LENGTH_SHORT).show();
                     break;
                 case FM_OPEN_SUCCEED:
                     // pswitch_4
                     Log.d(TAG, "FM open succeed callback");
-                    getPreferences(0).edit().putBoolean(FMRADIOENABLED, true).commit();
+                    Preferences.setEnabled(context, true);
                     enableUI(true);
-                    volume = pref.getInt(VOLUME, volume);
+                    volume = Preferences.getVolume(context);
                     setFMRadioVolume(volume);
                     isPerformClick = true;
-                    scaned = getPreferences(0).getBoolean(ISSCANED, false);
-                    if (isDBEmpty() || !scaned) {
-                        getPreferences(0).edit().putBoolean(ISSCANED, true).commit();
+                    if (isDBEmpty() || !Preferences.isScanned(context)) {
+                        Preferences.setScanned(context, true);
                         showDialog(DIALOG_IF_SCAN_FIRST);
                     }
                     break;
@@ -1095,21 +1085,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         }
     }
 
-    private void initSavedDateFromDB() {
-        SharedPreferences prefs = getPreferences(0);
-        if (prefs.contains("Last_Freq")) {
-            mCurFreq = prefs.getInt("Last_Freq", LOW_FREQUENCY);
-            if (mCurFreq < LOW_FREQUENCY) {
-                mCurFreq = LOW_FREQUENCY;
-            } else if (mCurFreq > HIGH_FREQUENCY) {
-                mCurFreq = HIGH_FREQUENCY;
-            }
-        }
-        if (prefs.contains("Last_ChNum")) {
-            lastPosition = prefs.getInt("Last_ChNum", 0);
-        }
-    }
-
     private void initSeekBar() {
         mSeekBar = (SeekBar) findViewById(R.id.seek);
         mSeekBar.setEnabled(true);
@@ -1134,7 +1109,10 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private void onCreateInternal() {
         Log.d(TAG, "**************FMRadioMain Activity onCreateInternal() called!****************");
         setContentView(R.layout.main);
-        initSavedDateFromDB();
+
+        mCurFreq = Preferences.getLastFrequency(this);
+        lastPosition = Preferences.getLastChannel(this);
+
         initResourceRefs();
         bindToService();
         registerBroadcastReceiver();
@@ -2072,36 +2050,26 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         if (mRingerStreamIcon != null) {
             mRingerStreamIcon.setImageResource(index == 0 ? R.drawable.ic_mp_mute : R.drawable.ic_mp_unmute);
         }
-        SharedPreferences pref = getPreferences(0);
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_VOLUME_UP:
-                volume++;
-                if (volume > 15) {
-                    volume = 15;
-                }
-                setFMRadioVolume(volume);
-                pref.edit().putInt(VOLUME, volume).commit();
-                mLevel.setProgress(index);
-                mToast.setView(volumeView);
-                mToast.setDuration(Toast.LENGTH_SHORT);
-                mToast.setGravity(Gravity.CENTER, 0, 0);
-                mToast.show();
-                return true;
-            case KeyEvent.KEYCODE_VOLUME_DOWN:
-                volume--;
-                if (volume < 0) {
-                    volume = 0;
-                }
-                setFMRadioVolume(volume);
-                pref.edit().putInt(VOLUME, volume).commit();
-                mLevel.setProgress(index);
-                mToast.setView(volumeView);
-                mToast.setDuration(Toast.LENGTH_SHORT);
-                mToast.setGravity(Gravity.CENTER_VERTICAL, 0, 0);
-                mToast.show();
-                return true;
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            volume++;
+            if (volume > 15) {
+                volume = 15;
+            }
+        } else {
+            volume--;
+            if (volume < 0) {
+                volume = 0;
+            }
         }
-        return super.onKeyDown(keyCode, event);
+
+        setFMRadioVolume(volume);
+        Preferences.setVolume(this, volume);
+        mLevel.setProgress(index);
+        mToast.setView(volumeView);
+        mToast.setDuration(Toast.LENGTH_SHORT);
+        mToast.setGravity(Gravity.CENTER, 0, 0);
+        mToast.show();
+        return true;
     }
 
     @Override
@@ -2206,10 +2174,8 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 break;
             case EXIT_ID:
                 Log.d(TAG, "User click Exit Menu to exit FM");
-                SharedPreferences pref = getPreferences(0);
-                pref.edit().putBoolean("isscaned", false)
-                        .putBoolean("fmradioenabled", false)
-                        .commit();
+                Preferences.setScanned(this, false);
+                Preferences.setEnabled(this, false);
                 isExitFromUI = true;
                 finish();
                 break;
@@ -2255,10 +2221,8 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
         ignoreRdsEvent(false);
 
-        SharedPreferences.Editor editor = getPreferences(0).edit();
-        editor.putInt("Last_Freq", mCurFreq);
-        editor.putInt("Last_ChNum", lastPosition);
-        editor.commit();
+        Preferences.setLastFrequency(this, mCurFreq);
+        Preferences.setLastChannel(this, lastPosition);
     }
 
     @Override
@@ -2280,27 +2244,21 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
             return false;
         }
         super.onPrepareOptionsMenu(menu);
-        boolean fmRadioEnabled = getPreferences(0).getBoolean(FMRADIOENABLED, false);
-        if (!isEdit) {
-            menu.clear();
-            menu.add(Menu.NONE, SAVE_ID, 0, R.string.save_preset).setIcon(R.drawable.ic_menu_save_channel);
-            menu.add(Menu.NONE, CLEAR_ID, 1, R.string.clear_presets).setIcon(R.drawable.ic_menu_clear_channel);
-            menu.add(Menu.NONE, EXIT_ID, 4, R.string.exit).setIcon(R.drawable.ic_menu_exit);
-            if (fmRadioEnabled) {
-                menu.add(Menu.NONE, SCAN_SAVE_ID, 3, R.string.scan).setIcon(R.drawable.ic_menu_save_channel);
-            }
-        } else {
-            menu.clear();
-            if (fmRadioEnabled) {
-                menu.add(Menu.NONE, EDIT_ID, 0, R.string.edit_preset).setIcon(R.drawable.ic_menu_edit_preset);
-                menu.add(Menu.NONE, SCAN_SAVE_ID, 3, R.string.scan).setIcon(android.R.drawable.ic_menu_search);
-                menu.add(Menu.NONE, CLEAR_ID, 1, R.string.clear_presets).setIcon(R.drawable.ic_menu_clear_channel);
-                menu.add(Menu.NONE, EXIT_ID, 4, R.string.exit).setIcon(R.drawable.ic_menu_exit);
-            } else {
-                menu.add(Menu.NONE, CLEAR_ID, 1, R.string.clear_presets).setIcon(R.drawable.ic_menu_clear_channel);
-                menu.add(Menu.NONE, EXIT_ID, 4, R.string.exit).setIcon(R.drawable.ic_menu_exit);
-            }
+
+        boolean fmRadioEnabled = Preferences.isEnabled(this);
+
+        menu.clear();
+        menu.add(Menu.NONE, CLEAR_ID, Menu.FIRST + 1, R.string.clear_presets).setIcon(R.drawable.ic_menu_clear_channel);
+        menu.add(Menu.NONE, EXIT_ID, Menu.FIRST + 4, R.string.exit).setIcon(R.drawable.ic_menu_exit);
+        if (isEdit && fmRadioEnabled) {
+            menu.add(Menu.NONE, EDIT_ID, Menu.FIRST, R.string.edit_preset).setIcon(R.drawable.ic_menu_edit_preset);
+        } else if (!isEdit) {
+            menu.add(Menu.NONE, SAVE_ID, Menu.FIRST, R.string.save_preset).setIcon(R.drawable.ic_menu_save_channel);
         }
+        if (fmRadioEnabled) {
+            menu.add(Menu.NONE, SCAN_SAVE_ID, Menu.FIRST + 3, R.string.scan).setIcon(R.drawable.ic_menu_save_channel);
+        }
+
         int audioRouting = 0;
         try {
             audioRouting = mService.getAudioRouting();
@@ -2308,9 +2266,9 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
             Log.e(TAG, "getAudioRouting failed");
         }
         if (audioRouting == FMRadioPlayerService.AudioManager_ROUTE_FM_HEADSET) {
-            menu.add(Menu.NONE, BY_LOUDSPEAKER_ID, 2, R.string.by_loudspeaker).setIcon(R.drawable.ic_menu_loud_speaker);
+            menu.add(Menu.NONE, BY_LOUDSPEAKER_ID, Menu.FIRST + 2, R.string.by_loudspeaker).setIcon(R.drawable.ic_menu_loud_speaker);
         } else if (audioRouting == FMRadioPlayerService.AudioManager_ROUTE_FM_SPEAKER) {
-            menu.add(Menu.NONE, BY_HEADSET_ID, 2, R.string.by_headset).setIcon(R.drawable.ic_menu_header);
+            menu.add(Menu.NONE, BY_HEADSET_ID, Menu.FIRST + 2, R.string.by_headset).setIcon(R.drawable.ic_menu_header);
         }
         return true;
     }

@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.os.Handler;
@@ -491,7 +490,7 @@ public class FMRadioPlayerService extends Service {
                         notifyCmdResults(FM_TUNE_SUCCEED, null);
                         Log.w(TAG, "OnCommandCompleteListener : fmradio set frequency succeed!");
                     } else {
-                        int savedtune = getLastFreqFromDB();
+                        int savedtune = Preferences.getLastFrequency(FMRadioPlayerService.this);
                         if (mCurFreq == savedtune) {
                             Log.w(TAG, "This is first tune, need to set volume, unmute.");
                             try {
@@ -501,10 +500,9 @@ public class FMRadioPlayerService extends Service {
                                 mAudioMode = 0;
                                 notifyCmdResults(FM_HW_ERROR_FRQ, null);
                             }
-                            SharedPreferences shPref = getSharedPreferences("FMRadioMain", 0);
-                            int vol = shPref.getInt("volume", FMRadioMain.DEFAULT_VOICE_VOLUME);
                             try {
-                                mIFMRadioService.setVolume(shPref.getInt("volume", FMRadioMain.DEFAULT_VOICE_VOLUME));
+                                int vol = Preferences.getVolume(FMRadioPlayerService.this);
+                                mIFMRadioService.setVolume(vol);
                             } catch (RemoteException e) {
                                 Log.e(TAG, "setVolume Failed: " + e.getMessage());
                             }
@@ -993,17 +991,6 @@ public class FMRadioPlayerService extends Service {
         }
     }
 
-    private int getLastFreqFromDB() {
-        SharedPreferences prefs = getSharedPreferences("FMRadioMain", 0);
-        int frequency = prefs.getInt("Last_Freq", 87500);
-        if (frequency < 87500) {
-            frequency = 87500;
-        } else if (frequency > 108000) {
-            frequency = 108000;
-        }
-        return frequency;
-    }
-
     private final boolean isAirplaneModeOn() {
         return Settings.System.getInt(getContentResolver(), "airplane_mode_on", 0) == 1;
     }
@@ -1174,14 +1161,11 @@ public class FMRadioPlayerService extends Service {
     }
 
     private void resetVolume() {
-        SharedPreferences shPref = getSharedPreferences("FMRadioMain", 0);
-        int vol = FMRadioMain.DEFAULT_VOICE_VOLUME;
-        if (shPref == null || mReceiver == null) {
+        if (mReceiver == null) {
             return;
         }
-        vol = shPref.getInt("volume", FMRadioMain.DEFAULT_VOICE_VOLUME);
         try {
-            mIFMRadioService.setVolume(vol);
+            mIFMRadioService.setVolume(Preferences.getVolume(this));
         } catch (RemoteException e) {
             Log.e(TAG, "setVolume Failed: " + e.getMessage());
         }
@@ -1257,7 +1241,7 @@ public class FMRadioPlayerService extends Service {
         Log.d(TAG, "mServiceState.curServiceState() = " + mServiceState.curServiceState());
         if (!isAirplaneModeOn() && mServiceState.curServiceState() == -1) {
             Log.d(TAG, "Before fm radio power on");
-            boolean ret = mServiceState.powerOn(getLastFreqFromDB());
+            boolean ret = mServiceState.powerOn(Preferences.getLastFrequency(this));
             Log.d(TAG, "After fm radio power on");
             if (ret) {
                 Log.d(TAG, "fm radio power on request sucessfully, wait for callback");
