@@ -29,7 +29,6 @@ public class FMClearChannel extends ListActivity implements View.OnClickListener
 
     public static final String AUTHORITY = "com.motorola.provider.fmradio";
     public static final Uri CONTENT_URI = Uri.parse("content://com.motorola.provider.fmradio/FM_Radio");
-    public static final Uri SAVED_CONTENT_URI = Uri.parse("content://com.motorola.provider.fmradio/FM_Radio_saved_state");
 
     public static final int CLEAR_ID = 1;
     public static final int SELECT_ALL_ID = 2;

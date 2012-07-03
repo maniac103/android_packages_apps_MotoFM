@@ -72,7 +72,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     public static final String SERVICE_STOP = "com.motorola.fmradio.service.stop";
 
     public static final Uri CONTENT_URI = Uri.parse("content://com.motorola.provider.fmradio/FM_Radio");
-    public static final Uri SAVED_CONTENT_URI = Uri.parse("content://com.motorola.provider.fmradio/FM_Radio_saved_state");
 
     public static int DEFAULT_VOICE_VOLUME = 0;
     private static int LIGHT_ON_TIME = 90000;
@@ -149,7 +148,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     public static final String PRESET = "preset";
     public static final String VOLUME = "volume";
 
-    private static float lastFreq = 0;
     private static int lastPosition = 0;
     private static String rds_text_separator = "...";
 
@@ -1098,21 +1096,17 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     }
 
     private void initSavedDateFromDB() {
-        Cursor cursor = getContentResolver().query(SAVED_CONTENT_URI, FMUtil.SAVED_PROJECTION, null, null, null);
-        if (cursor != null) {
-            if (cursor.getCount() != 0) {
-                cursor.moveToFirst();
-                lastPosition = cursor.getInt(1);
-                lastFreq = cursor.getFloat(2);
-                mCurFreq = (int) (lastFreq * 1000.0F);
-                if (mCurFreq < LOW_FREQUENCY) {
-                    mCurFreq = LOW_FREQUENCY;
-                } else if (mCurFreq > HIGH_FREQUENCY) {
-                    mCurFreq = HIGH_FREQUENCY;
-                }
-                lastFreq = mCurFreq / 1000;
+        SharedPreferences prefs = getPreferences(0);
+        if (prefs.contains("Last_Freq")) {
+            mCurFreq = prefs.getInt("Last_Freq", LOW_FREQUENCY);
+            if (mCurFreq < LOW_FREQUENCY) {
+                mCurFreq = LOW_FREQUENCY;
+            } else if (mCurFreq > HIGH_FREQUENCY) {
+                mCurFreq = HIGH_FREQUENCY;
             }
-            cursor.close();
+        }
+        if (prefs.contains("Last_ChNum")) {
+            lastPosition = prefs.getInt("Last_ChNum", 0);
         }
     }
 
@@ -2062,7 +2056,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         } else {
             unbindFMRadioService();
         }
-        lastFreq = 0;
         mbIsFMStart = false;
         mService = null;
         mPowerWaitingTS = null;
@@ -2262,10 +2255,10 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
         ignoreRdsEvent(false);
 
-        ContentValues cv = new ContentValues();
-        cv.put("Last_ChNum", Integer.toString(lastPosition));
-        cv.put("Last_Freq", Float.toString((float) mCurFreq / 1000.0F));
-        getContentResolver().update(SAVED_CONTENT_URI, cv, "ID=" + 0, null);
+        SharedPreferences.Editor editor = getPreferences(0).edit();
+        editor.putInt("Last_Freq", mCurFreq);
+        editor.putInt("Last_ChNum", lastPosition);
+        editor.commit();
     }
 
     @Override

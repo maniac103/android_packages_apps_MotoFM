@@ -994,23 +994,14 @@ public class FMRadioPlayerService extends Service {
     }
 
     private int getLastFreqFromDB() {
-        Cursor cursor = getContentResolver().query(FMRadioMain.SAVED_CONTENT_URI, FMUtil.SAVED_PROJECTION, null, null, null);
-        float lastFreq = 87500.0F;
-        int counter = 87500;
-        if (cursor != null) {
-            if (cursor.getCount() > 0) {
-                cursor.moveToFirst();
-                lastFreq = cursor.getFloat(2);
-                counter = (int) (lastFreq * 1000.0F);
-                if (counter < 87500) {
-                    counter = 87500;
-                } else if (counter > 108000) {
-                    counter = 108000;
-                }
-            }
-            cursor.close();
+        SharedPreferences prefs = getSharedPreferences("FMRadioMain", 0);
+        int frequency = prefs.getInt("Last_Freq", 87500);
+        if (frequency < 87500) {
+            frequency = 87500;
+        } else if (frequency > 108000) {
+            frequency = 108000;
         }
-        return counter;
+        return frequency;
     }
 
     private final boolean isAirplaneModeOn() {

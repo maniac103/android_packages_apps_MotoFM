@@ -20,19 +20,14 @@ public class FMDataProvider extends ContentProvider {
     private static final int DATABASE_VERSION = 1;
 
     private static final String TABLE_NAME = "FM_Radio";
-    private static final String SAVED_TABLE_NAME = "FM_Radio_saved_state";
 
     private static final int CHANNELS = 1;
     private static final int CHANNELS_ID = 2;
-    private static final int SAVED_STATE = 3;
-    private static final int SAVED_STATE_ID = 4;
 
     private static final UriMatcher sUriMatcher = new UriMatcher(-1);
     static {
         sUriMatcher.addURI("com.motorola.provider.fmradio", "FM_Radio", CHANNELS);
         sUriMatcher.addURI("com.motorola.provider.fmradio", "FM_Radio/#", CHANNELS_ID);
-        sUriMatcher.addURI("com.motorola.provider.fmradio", "FM_Radio_saved_state", SAVED_STATE);
-        sUriMatcher.addURI("com.motorola.provider.fmradio", "FM_Radio_saved_state/#", SAVED_STATE_ID);
     }
 
     private DatabaseHelper mOpenHelper;
@@ -44,11 +39,8 @@ public class FMDataProvider extends ContentProvider {
 
         @Override
         public void onCreate(SQLiteDatabase db) {
-            String sql_saved = "insert into FM_Radio_saved_state (ID, Last_ChNum, Last_Freq, isFirstScaned, Last_Volume) values(\'0\', \'0\', \'87.5\', \'true\', \'5\');";
             try {
-                db.execSQL("CREATE TABLE FM_Radio_saved_state (ID INTEGER,Last_ChNum INTEGER,Last_Freq FLOAT,isFirstScaned BOOLEAN,Last_Volume INTEGER);");
                 db.execSQL("CREATE TABLE FM_Radio (ID INTEGER,CH_Num TEXT,CH_Freq FLOAT,CH_Name TEXT,CH_RdsName TEXT);");
-                db.execSQL(sql_saved);
                 for (int i = 0; i < 20; i++) {
                     db.execSQL("insert into FM_Radio (ID, CH_Num, CH_Freq, CH_Name, CH_RdsName) values(\'" + i + "\', \'Preset" + (i + 1) + "\', \'\', \'\', \'\');");
                 }
@@ -82,11 +74,6 @@ public class FMDataProvider extends ContentProvider {
             case CHANNELS_ID:
                 Log.d(TAG, "set channel table: FM_Radio");
                 qb.setTables(TABLE_NAME);
-                break;
-            case SAVED_STATE:
-            case SAVED_STATE_ID:
-                Log.d(TAG, "set save table: FM_Radio_saved_state");
-                qb.setTables(SAVED_TABLE_NAME);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown URI " + uri);
@@ -136,10 +123,6 @@ public class FMDataProvider extends ContentProvider {
             case CHANNELS:
             case CHANNELS_ID:
                 count = db.update(TABLE_NAME, values, where, whereArgs);
-                break;
-            case SAVED_STATE:
-            case SAVED_STATE_ID:
-                count = db.update(SAVED_TABLE_NAME, values, where, whereArgs);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown URI " + uri);

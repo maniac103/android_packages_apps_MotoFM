@@ -27,7 +27,6 @@ public class FMEditChannel extends Activity implements View.OnClickListener {
 
     public static final String AUTHORITY = "com.motorola.provider.fmradio";
     public static final Uri CONTENT_URI = Uri.parse("content://com.motorola.provider.fmradio/FM_Radio");
-    public static final Uri SAVED_CONTENT_URI = Uri.parse("content://com.motorola.provider.fmradio/FM_Radio_saved_state");
     private static final String[] PROJECTION = new String[] {
         "ID", "CH_Num", "CH_Freq", "CH_Name", "CH_RdsName"
     };
