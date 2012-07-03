@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animation-list android:visible="true" android:oneshot="false"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_0" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_1" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_2" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_3" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_4" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_5" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_6" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_7" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_8" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_9" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_10" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_11" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_12" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_13" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_14" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_15" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_16" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_17" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_18" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_19" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_20" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_21" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_22" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_23" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_24" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_25" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_26" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_27" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_28" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_29" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_30" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_31" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_32" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_33" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_34" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_35" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_36" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_37" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_38" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_39" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_40" />
+    <item android:duration="50" android:drawable="@drawable/fm_progress_red_41" />
+</animation-list>

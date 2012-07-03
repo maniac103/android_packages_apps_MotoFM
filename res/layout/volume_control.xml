@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center_vertical" android:orientation="vertical" android:background="@drawable/panel_background" android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="35.0px" android:layout_marginTop="13.0px">
+        <ImageView android:id="@id/ringer_stream_icon" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="0.0px" />
+        <TextView android:textAppearance="?android:textAppearanceMedium" android:id="@id/message" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="9.0px" android:text="@string/fm_volume" />
+    </LinearLayout>
+    <ProgressBar android:id="@id/level" android:layout_width="200.0px" android:layout_height="wrap_content" android:layout_marginLeft="25.0px" android:layout_marginTop="13.0px" android:layout_marginRight="25.0px" android:layout_marginBottom="28.0px" style="?android:attr/progressBarStyleHorizontal" />
+</LinearLayout>
