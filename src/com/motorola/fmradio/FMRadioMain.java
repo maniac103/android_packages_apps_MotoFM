@@ -420,7 +420,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     isPerformClick = true;
                     volume = Preferences.getVolume(context);
                     if (isDBEmpty() || !Preferences.isScanned(context)) {
-                        Preferences.setScanned(context, true);
                         showDialog(DIALOG_IF_SCAN_FIRST);
                     }
                     break;
@@ -457,7 +456,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     setFMRadioVolume(volume);
                     isPerformClick = true;
                     if (isDBEmpty() || !Preferences.isScanned(context)) {
-                        Preferences.setScanned(context, true);
                         showDialog(DIALOG_IF_SCAN_FIRST);
                     }
                     break;
@@ -833,7 +831,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
             Log.w(TAG, "Current station is not the frequency where RDS will be shown");
             Log.w(TAG, "mRDSFreq = " + mRDSFreq + " mCurFreq = " + mCurFreq);
             displayRdsScrollText(false);
-        } else if (!show) {
+        } else if (show) {
             displayRdsScrollText(true);
         }
     }
@@ -1625,6 +1623,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     boolean isClearAll = data.getBooleanExtra("isClearAll", false);
                     if (isClearAll) {
                         Log.d(TAG, "FMRadio clear all is true!");
+                        Preferences.setScanned(this, false);
                         LvChannel.setSelection(0);
                         lastPosition = 0;
                         isPerformClick = true;
@@ -1695,13 +1694,13 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
-        long pos = info.id;
+        int pos = (int) info.id;
         ContentValues cv;
         Log.d(TAG, "onContextItemSelected, info.id = " + pos);
 
         switch (item.getItemId()) {
             case PLAY_MENU_ID:
-                playClickPreset(LvChannel, (int) pos);
+                playClickPreset(LvChannel, pos);
                 break;
             case EDIT_MENU_ID:
                 Intent intent_edit = new Intent(this, FMEditChannel.class);
@@ -1710,15 +1709,15 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 break;
             case REPLACE_MENU_ID:
                 boolean hasRds = mRdsAvailable && mRdsTextID.length() > 0;
-                saveStationToDB((int) pos, mCurFreq, "CH" + pos, hasRds ? null : "", hasRds ? mRdsTextID : "");
+                saveStationToDB(pos, mCurFreq, "CH" + pos, hasRds ? null : "", hasRds ? mRdsTextID : "");
                 updateDisplayPanel(mCurFreq, true);
                 updatePresetSwitcher();
-                lastPosition = (int) pos;
+                lastPosition = pos;
                 isEdit = true;
                 updateListView();
                 break;
             case CLEAR_MENU_ID:
-                saveStationToDB((int) pos, null, "CH" + pos, "", "");
+                saveStationToDB(pos, null, "CH" + pos, "", "");
                 isPerformClick = true;
                 updateListView();
                 updateDisplayPanel(mCurFreq, updatePresetSwitcher());
@@ -1847,6 +1846,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int whichButton) {
+                                Preferences.setScanned(FMRadioMain.this, true);
                                 mCurFreq = FMUtil.MIN_FREQUENCY;
                                 ignoreRdsEvent(true);
                                 mWakeLock.acquire(LIGHT_ON_TIME);
@@ -2060,7 +2060,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 break;
             case EXIT_ID:
                 Log.d(TAG, "User click Exit Menu to exit FM");
-                Preferences.setScanned(this, false);
                 Preferences.setEnabled(this, false);
                 isExitFromUI = true;
                 finish();

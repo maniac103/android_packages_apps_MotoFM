@@ -58,7 +58,7 @@ public class MarqueeText extends View {
         int specMode = MeasureSpec.getMode(measureSpec);
         int specSize = MeasureSpec.getSize(measureSpec);
         mAscent = (int) mTextPaint.ascent();
-        if (mAscent == 2) {
+        if (specMode == MeasureSpec.EXACTLY) {
             return specSize;
         }
         result = (int) (getPaddingTop() + getPaddingBottom() + mTextPaint.descent() + mAscent);
@@ -91,11 +91,13 @@ public class MarqueeText extends View {
     }
 
     public void marqueeStart() {
-        mMarqueeHandler.removeCallbacks(mTickEvent);
+        marqueePause();
         mScrollPos = 0;
         mScrollLength = (int) (mTextPaint.measureText(mText) - getWidth());
         invalidate();
-        mMarqueeHandler.postDelayed(mTickEvent, MARQUEE_START_DELAY);
+        if (mScrollLength > 0) {
+            marqueeResume();
+        }
     }
 
     public void marqueeTick() {
@@ -112,13 +114,20 @@ public class MarqueeText extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.translate(mScrollPos, 0);
+        canvas.translate(-mScrollPos, 0);
         canvas.drawText(mText, getPaddingLeft(), getPaddingTop() - mAscent, mTextPaint);
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         setMeasuredDimension(measureWidth(widthMeasureSpec), measureHeight(heightMeasureSpec));
+    }
+
+    @Override
+    protected boolean setFrame(int left, int top, int right, int bottom) {
+        boolean result = super.setFrame(left, top, right, bottom);
+        marqueeStart();
+        return result;
     }
 
     @Override
