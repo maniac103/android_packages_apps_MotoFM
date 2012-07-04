@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputFilter;
 import android.text.InputFilter.LengthFilter;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -25,18 +26,10 @@ import java.util.Locale;
 public class FMEditChannel extends Activity implements View.OnClickListener {
     public static final String TAG = "FMEditChannel";
 
-    public static final String AUTHORITY = "com.motorola.provider.fmradio";
-    public static final Uri CONTENT_URI = Uri.parse("content://com.motorola.provider.fmradio/FM_Radio");
-    private static final String[] PROJECTION = new String[] {
-        "ID", "CH_Num", "CH_Freq", "CH_Name", "CH_RdsName"
-    };
-
     public static final int SAVE_ID = 1;
     public static final int DISCARD_ID = 2;
 
     public static final String FM_VOLUME_SETTING = "com.motorola.fmradio.setvolume";
-    public static final int High_frequency = 108000;
-    public static final int Low_frequency = 87500;
 
     private TextView EdEdit_freq;
     private EditText EdEdit_name;
@@ -44,10 +37,9 @@ public class FMEditChannel extends Activity implements View.OnClickListener {
     private int c_num;
     private String curFreqName = "";
     private String curRdsPS = "";
-    private Intent intent;
     private Button mBtnDiscard;
     private Button mBtnSave;
-    private int mCurFreq = Low_frequency;
+    private int mCurFreq = FMUtil.MIN_FREQUENCY;
     private Cursor mCursor;
 
     private void initResource() {
@@ -76,28 +68,24 @@ public class FMEditChannel extends Activity implements View.OnClickListener {
             public void onFocusChange(View v, boolean hasFocus) {
             }
         });
-        intent = getIntent();
-        c_num = intent.getIntExtra("current_num", 1);
-        if (intent.getData() == null) {
-            intent.setData(CONTENT_URI);
-        }
-        mCursor = getContentResolver().query(getIntent().getData(), FMUtil.PROJECTION, "ID=" + c_num, null, null);
+        c_num = getIntent().getIntExtra("current_num", 1);
+        mCursor = getContentResolver().query(FMUtil.CONTENT_URI, FMUtil.PROJECTION, "ID=" + c_num, null, null);
         if (mCursor != null) {
             mCursor.moveToFirst();
             TvEdit_ch_num.setText(getString(R.string.preset) + " " + (c_num + 1));
-            String chFreq = mCursor.getString(2);
-            curRdsPS = mCursor.getString(3);
-            curFreqName = mCursor.getString(4);
+            String chFreq = mCursor.getString(FMUtil.FM_RADIO_INDEX_CHFREQ);
+            curRdsPS = mCursor.getString(FMUtil.FM_RADIO_INDEX_CHNAME);
+            curFreqName = mCursor.getString(FMUtil.FM_RADIO_INDEX_CHRDSNAME);
             if (FMUtil.isEmptyStr(chFreq)) {
-                mCurFreq = Low_frequency;
+                mCurFreq = FMUtil.MIN_FREQUENCY;
             } else {
                 mCurFreq = (int) (Float.parseFloat(chFreq) * 1000.0F);
             }
             String curFreq = Float.toString((float) mCurFreq / 1000.0F) + getString(R.string.mhz);
             TvEdit_ch_num.setText(getString(R.string.preset) + " " + (c_num + 1));
-            if (curFreqName != null && curFreqName.length() > 0) {
+            if (!TextUtils.isEmpty(curFreqName)) {
                 EdEdit_name.setText(curFreqName);
-            } else if (curRdsPS != null && curRdsPS.length() > 0 && !curRdsPS.equals("")) {
+            } else if (!TextUtils.isEmpty(curRdsPS)) {
                 EdEdit_name.setText(curRdsPS);
             } else if (curFreq != null) {
                 EdEdit_name.setText(curFreq);
@@ -120,26 +108,10 @@ public class FMEditChannel extends Activity implements View.OnClickListener {
     public void onClick(View arg0) {
         switch (arg0.getId()) {
             case R.id.btn_save:
-                ContentValues cv = new ContentValues();
-                String id = mCursor.getString(0);
-                String chNum = mCursor.getString(1);
-                cv.put("ID", id);
-                cv.put("CH_Num", chNum);
-                cv.put("CH_Freq", EdEdit_freq.getText().toString());
-                cv.put("CH_Name", EdEdit_name.getText().toString());
-                cv.put("CH_RdsName", curRdsPS);
-                getContentResolver().update(getIntent().getData(), cv, "ID=" + id, null);
-                Intent edit_result = new Intent();
-                edit_result.putExtra("edit_name", EdEdit_name.getText().toString());
-                edit_result.putExtra("edit_freq", EdEdit_freq.getText().toString());
-                setResult(-1, edit_result);
-                finish();
+                doSave();
                 break;
             case R.id.btn_discard:
-                EdEdit_freq.setText("");
-                EdEdit_name.setText("");
-                setResult(0, new Intent("Discard"));
-                finish();
+                doDiscard();
                 break;
         }
     }
@@ -162,8 +134,8 @@ public class FMEditChannel extends Activity implements View.OnClickListener {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
-        menu.add(0, 1, 0, R.string.btn_save).setIcon(android.R.drawable.ic_menu_save);
-        menu.add(0, 2, 1, R.string.btn_discard).setIcon(R.drawable.ic_menu_discard);
+        menu.add(0, SAVE_ID, Menu.FIRST, R.string.btn_save).setIcon(android.R.drawable.ic_menu_save);
+        menu.add(0, DISCARD_ID, Menu.FIRST + 1, R.string.btn_discard).setIcon(R.drawable.ic_menu_discard);
         return true;
     }
 
@@ -197,30 +169,38 @@ public class FMEditChannel extends Activity implements View.OnClickListener {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case 1:
-                ContentValues cv = new ContentValues();
-                String id = mCursor.getString(0);
-                String chNum = mCursor.getString(1);
-                cv.put("ID", id);
-                cv.put("CH_Num", chNum);
-                cv.put("CH_Freq", EdEdit_freq.getText().toString());
-                cv.put("CH_Name", EdEdit_name.getText().toString());
-                cv.put("CH_RdsName", curRdsPS);
-                getContentResolver().update(getIntent().getData(), cv, "ID=" + id, null);
-                Intent edit_result = new Intent();
-                edit_result.putExtra("edit_name", EdEdit_name.getText().toString());
-                edit_result.putExtra("edit_freq", EdEdit_freq.getText().toString());
-                setResult(-1, edit_result);
-                finish();
+            case SAVE_ID:
+                doSave();
                 break;
-            case 2:
-                EdEdit_freq.setText("");
-                EdEdit_name.setText("");
-                setResult(0, new Intent("Discard"));
-                finish();
+            case DISCARD_ID:
+                doDiscard();
                 break;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void doSave() {
+        ContentValues cv = new ContentValues();
+        String id = mCursor.getString(0);
+        String chNum = mCursor.getString(1);
+        cv.put("ID", id);
+        cv.put("CH_Num", chNum);
+        cv.put("CH_Freq", EdEdit_freq.getText().toString());
+        cv.put("CH_Name", EdEdit_name.getText().toString());
+        cv.put("CH_RdsName", curRdsPS);
+        getContentResolver().update(FMUtil.CONTENT_URI, cv, "ID=" + id, null);
+        Intent edit_result = new Intent();
+        edit_result.putExtra("edit_name", EdEdit_name.getText().toString());
+        edit_result.putExtra("edit_freq", EdEdit_freq.getText().toString());
+        setResult(-1, edit_result);
+        finish();
+    }
+
+    private void doDiscard() {
+        EdEdit_freq.setText("");
+        EdEdit_name.setText("");
+        setResult(0, new Intent("Discard"));
+        finish();
     }
 }

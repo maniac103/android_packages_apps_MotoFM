@@ -1,12 +1,8 @@
 package com.motorola.fmradio;
 
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.Intent;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.view.Gravity;
@@ -17,6 +13,10 @@ public class FMUtil {
     public static final Uri CONTENT_URI = Uri.parse("content://com.motorola.provider.fmradio/FM_Radio");
     public static final String EMPTY = "";
 
+    public static final int MIN_FREQUENCY = 87500;
+    public static final int MAX_FREQUENCY = 108000;
+    public static final int STEP = 100;
+
     public static final String[] PROJECTION = new String[] {
         "ID", "CH_Num", "CH_Freq", "CH_Name", "CH_RdsName"
     };
@@ -26,17 +26,7 @@ public class FMUtil {
     public static  final int FM_RADIO_INDEX_CHNAME = 3;
     public static  final int FM_RADIO_INDEX_CHRDSNAME = 4;
 
-    public static final String[] SAVED_PROJECTION = new String[] {
-        "ID", "Last_ChNum", "Last_Freq", "isFirstScaned", "Last_Volume"
-    };
-    public static  final int FM_RADIO_SAVED_INDEX_ID = 0;
-    public static  final int FM_RADIO_SAVED_INDEX_LAST_CHNUM = 1;
-    public static  final int FM_RADIO_SAVED_INDEX_LAST_FREQ = 2;
-    public static  final int FM_RADIO_SAVED_INDEX_FIRST_SCAN = 3;
-    public static  final int FM_RADIO_SAVED_INDEX_LAST_VOLUME = 4;
-
     public static final int FREQ_RATE = 1000;
-    public static final String PRESET_POSTFIX = "MHz";
 
     public static String getMatchedStrByCursor(Cursor cursor, Integer value, boolean isLandScape) {
         String strPreset = null;
@@ -69,6 +59,28 @@ public class FMUtil {
             }
         }
         return strPreset;
+    }
+
+    public static String getPresetUiString(Context context, Cursor cursor, int index) {
+        String chFreq = cursor.getString(FM_RADIO_INDEX_CHFREQ);
+        String chName = cursor.getString(FM_RADIO_INDEX_CHNAME);
+        Resources res = context.getResources();
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(res.getString(R.string.preset));
+        sb.append(" ");
+        sb.append(index);
+        sb.append(" (");
+        if (!FMUtil.isEmptyStr(chName)) {
+            sb.append(chName.replaceAll("\n", " "));
+        } else if (!FMUtil.isEmptyStr(chFreq)) {
+            sb.append(chFreq);
+            sb.append(res.getString(R.string.mhz));
+        } else {
+            sb.append(res.getString(R.string.empty));
+        }
+        sb.append(")");
+        return sb.toString();
     }
 
     public static String getPresetStr(ContentResolver cr, Integer value, int index, boolean isLandScape) {
@@ -119,18 +131,5 @@ public class FMUtil {
         Toast ts = Toast.makeText(context, context.getString(noticeId), Toast.LENGTH_LONG);
         ts.setGravity(Gravity.CENTER, 0, 0);
         ts.show();
-    }
-
-    public static void showNotification(NotificationManager nm, Context context, String line2) {
-        Notification notification = new Notification(R.drawable.fm_statusbar_icon, "", System.currentTimeMillis());
-        Intent launchIntent = new Intent();
-        launchIntent.setAction(Intent.ACTION_MAIN);
-        launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-        launchIntent.setComponent(new ComponentName("com.motorola.fmradio", "com.motorola.fmradio.FMRadioMain"));
-        launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-        PendingIntent contentIntent = PendingIntent.getActivity(context, 0, launchIntent, 0);
-        notification.setLatestEventInfo(context, line2, null, contentIntent);
-        notification.flags |= Notification.DEFAULT_VIBRATE;
-        nm.notify(R.string.fmradio_service_label, notification);
     }
 }
