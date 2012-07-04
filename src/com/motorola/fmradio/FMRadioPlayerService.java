@@ -441,12 +441,16 @@ public class FMRadioPlayerService extends Service {
 
         @Override
         protected boolean tune(int freq) {
+            boolean result = false;
             try {
-                return mIFMRadioService.tune(freq);
+                result = mIFMRadioService.tune(freq);
             } catch (RemoteException e) {
                 Log.e(TAG, "tune Failed: " + e.getMessage());
             }
-            return false;
+            if (result) {
+                resetRDSData();
+            }
+            return result;
         }
     }
 

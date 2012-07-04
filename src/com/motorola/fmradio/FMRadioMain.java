@@ -677,7 +677,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                                     saveStationToDB(id, mCurFreq, null, mRdsTextID);
                                     updateDisplayPanel(mCurFreq, true);
                                     updatePresetSwitcher(id + 1);
-                                    lastPosition = id + 1;
+                                    lastPosition = id;
                                     updateListView();
                                     strPreset = FMUtil.getPresetStr(getContentResolver(), mCurFreq, lastPosition, isLandscape);
                                     sendCMDtoService(PRESET_CHANGED, PRESET, strPreset);
