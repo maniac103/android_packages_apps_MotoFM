@@ -18,13 +18,12 @@ public class FMUtil {
     public static final int STEP = 100;
 
     public static final String[] PROJECTION = new String[] {
-        "ID", "CH_Num", "CH_Freq", "CH_Name", "CH_RdsName"
+        "ID", "CH_Freq", "CH_Name", "CH_RdsName"
     };
     public static  final int FM_RADIO_INDEX_ID = 0;
-    public static  final int FM_RADIO_INDEX_CHNUM = 1;
-    public static  final int FM_RADIO_INDEX_CHFREQ = 2;
-    public static  final int FM_RADIO_INDEX_CHNAME = 3;
-    public static  final int FM_RADIO_INDEX_CHRDSNAME = 4;
+    public static  final int FM_RADIO_INDEX_CHFREQ = 1;
+    public static  final int FM_RADIO_INDEX_CHNAME = 2;
+    public static  final int FM_RADIO_INDEX_CHRDSNAME = 3;
 
     public static final int FREQ_RATE = 1000;
 

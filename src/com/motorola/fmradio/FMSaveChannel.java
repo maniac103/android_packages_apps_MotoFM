@@ -180,7 +180,6 @@ public class FMSaveChannel extends Activity implements View.OnClickListener {
         ContentValues cv = new ContentValues();
         int id = mPresetSpinner.getSelectedItemPosition();
 
-        cv.put("CH_Num", "CH" + (id + 1));
         cv.put("CH_Freq", mFrequency);
         cv.put("CH_Name", mNameField.getText().toString());
         cv.put("CH_RdsName", TextUtils.isEmpty(mRdsInfo) ? "" : mRdsInfo);

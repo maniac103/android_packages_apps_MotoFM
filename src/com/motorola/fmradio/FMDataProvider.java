@@ -40,9 +40,9 @@ public class FMDataProvider extends ContentProvider {
         @Override
         public void onCreate(SQLiteDatabase db) {
             try {
-                db.execSQL("CREATE TABLE FM_Radio (ID INTEGER,CH_Num TEXT,CH_Freq FLOAT,CH_Name TEXT,CH_RdsName TEXT);");
+                db.execSQL("CREATE TABLE FM_Radio (ID INTEGER,CH_Freq FLOAT,CH_Name TEXT,CH_RdsName TEXT);");
                 for (int i = 0; i < 20; i++) {
-                    db.execSQL("insert into FM_Radio (ID, CH_Num, CH_Freq, CH_Name, CH_RdsName) values(\'" + i + "\', \'Preset" + (i + 1) + "\', \'\', \'\', \'\');");
+                    db.execSQL("insert into FM_Radio (ID, CH_Freq, CH_Name, CH_RdsName) values(\'" + i + "\', \'\', \'\', \'\');");
                 }
             } catch (SQLException e) {
                 Log.e(TAG, e.toString());
@@ -91,23 +91,21 @@ public class FMDataProvider extends ContentProvider {
     @Override
     public Uri insert(Uri uri, ContentValues initialValues) {
         if (initialValues.get("ID") == null
-                || initialValues.get("CH_Num") == null
                 || initialValues.get("CH_Freq") == null
                 || initialValues.get("CH_Name") == null
                 || initialValues.get("CH_RdsName") == null) {
             throw new IllegalArgumentException("Null values when adding to " + uri);
         }
         String field_1 = initialValues.get("ID").toString();
-        String field_2 = initialValues.get("CH_Num").toString();
-        String field_3 = initialValues.get("CH_Freq").toString();
-        String field_4 = initialValues.get("CH_Name").toString();
-        String field_5 = initialValues.get("CH_RdsName").toString();
+        String field_2 = initialValues.get("CH_Freq").toString();
+        String field_3 = initialValues.get("CH_Name").toString();
+        String field_4 = initialValues.get("CH_RdsName").toString();
         SQLiteDatabase db = mOpenHelper.getWritableDatabase();
 
         try {
-            db.execSQL("insert into FM_Radio (ID, CH_Num, CH_Freq, CH_Name, CH_RdsName) values(\'" +
+            db.execSQL("insert into FM_Radio (ID, CH_Freq, CH_Name, CH_RdsName) values(\'" +
                     field_1 + "\', \'" + field_2 + "\', \'" + field_3 +
-                    "\', \'" + field_4 + "\', \'" + field_5);
+                    "\', \'" + field_4 + "\')");
         } catch (SQLiteException e) {
             Log.e(TAG, e.toString());
         }

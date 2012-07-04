@@ -182,10 +182,8 @@ public class FMEditChannel extends Activity implements View.OnClickListener {
 
     private void doSave() {
         ContentValues cv = new ContentValues();
-        String id = mCursor.getString(0);
-        String chNum = mCursor.getString(1);
+        String id = mCursor.getString(FMUtil.FM_RADIO_INDEX_ID);
         cv.put("ID", id);
-        cv.put("CH_Num", chNum);
         cv.put("CH_Freq", EdEdit_freq.getText().toString());
         cv.put("CH_Name", EdEdit_name.getText().toString());
         cv.put("CH_RdsName", curRdsPS);

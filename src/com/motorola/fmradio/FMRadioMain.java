@@ -515,7 +515,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                         }
                     } else if (isScanAll) {
                         if (count_save <= PRESET_NUM) {
-                            saveStationToDB(count_save, mCurFreq, null, "", "");
+                            saveStationToDB(count_save, mCurFreq, "", "");
                             if (count_save == 0) {
                                 mFirstCounter = mCurFreq;
                             }
@@ -674,7 +674,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                                 String chName = cursor.getString(FMUtil.FM_RADIO_INDEX_CHNAME);
                                 if (FMUtil.isEmptyStr(chName)) {
                                     int id = cursor.getInt(FMUtil.FM_RADIO_INDEX_ID);
-                                    saveStationToDB(id, mCurFreq, cursor.getString(FMUtil.FM_RADIO_INDEX_CHNUM), null, mRdsTextID);
+                                    saveStationToDB(id, mCurFreq, null, mRdsTextID);
                                     updateDisplayPanel(mCurFreq, true);
                                     updatePresetSwitcher(id + 1);
                                     lastPosition = id + 1;
@@ -1491,7 +1491,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     public void clearDB() {
         for (int i = 0; i < PRESET_NUM; i++) {
-            saveStationToDB(i, null, null, "", "");
+            saveStationToDB(i, null, "", "");
         }
     }
 
@@ -1709,7 +1709,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 break;
             case REPLACE_MENU_ID:
                 boolean hasRds = mRdsAvailable && mRdsTextID.length() > 0;
-                saveStationToDB(pos, mCurFreq, "CH" + pos, hasRds ? null : "", hasRds ? mRdsTextID : "");
+                saveStationToDB(pos, mCurFreq, hasRds ? null : "", hasRds ? mRdsTextID : "");
                 updateDisplayPanel(mCurFreq, true);
                 updatePresetSwitcher();
                 lastPosition = pos;
@@ -1717,7 +1717,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 updateListView();
                 break;
             case CLEAR_MENU_ID:
-                saveStationToDB(pos, null, "CH" + pos, "", "");
+                saveStationToDB(pos, null, "", "");
                 isPerformClick = true;
                 updateListView();
                 updateDisplayPanel(mCurFreq, updatePresetSwitcher());
@@ -2247,16 +2247,13 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         return false;
     }
 
-    private void saveStationToDB(int id, Integer freq, String number, String name, String rdsName) {
+    private void saveStationToDB(int id, Integer freq, String name, String rdsName) {
         ContentValues cv = new ContentValues();
         cv.put("ID", Integer.toString(id));
         if (freq != null) {
             cv.put("CH_Freq", Float.toString((float) freq / 1000.0F));
         } else {
             cv.put("CH_Freq", "");
-        }
-        if (number != null) {
-            cv.put("CH_Num", number);
         }
         if (name != null) {
             cv.put("CH_Name", name);
