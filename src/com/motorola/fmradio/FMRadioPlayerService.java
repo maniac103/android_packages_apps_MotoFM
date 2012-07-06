@@ -1275,7 +1275,7 @@ public class FMRadioPlayerService extends Service {
 
             Notification notification = new Notification(R.drawable.fm_statusbar_icon, "", System.currentTimeMillis());
             notification.setLatestEventInfo(this, text, null, contentIntent);
-            notification.flags |= Notification.DEFAULT_VIBRATE;
+            notification.flags |= Notification.FLAG_ONGOING_EVENT;
 
             mNM.notify(id, notification);
         } else {
