@@ -773,14 +773,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     cursor.moveToFirst();
                     String chFreq = cursor.getString(FMUtil.FM_RADIO_INDEX_CHFREQ);
                     if (FMUtil.isEmptyStr(chFreq)) {
-                        Intent intent_save = new Intent();
-                        intent_save.putExtra("current_freq", mCurFreq);
-                        intent_save.putExtra("current_num", info.id);
-                        if (!TextUtils.isEmpty(mRdsTextID)) {
-                            intent_save.putExtra("rds_name", mRdsTextID);
-                        }
-                        intent_save.setClass(FMRadioMain.this, FMSaveChannel.class);
-                        startActivityForResult(intent_save, SAVE_CODE);
+                        saveChannel(pos);
                     } else {
                         menu.setHeaderTitle(list_results.get(pos));
                         if (mCurFreq != (int) (Float.parseFloat(chFreq) * 1000.0F)) {
@@ -1125,13 +1118,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 return;
             }
             Log.d(TAG, "Select an empty list item, go to save UI");
-            Intent intent_save = new Intent(this, FMSaveChannel.class);
-            intent_save.putExtra("current_freq", mCurFreq);
-            intent_save.putExtra("current_num", position);
-            if (!TextUtils.isEmpty(mRdsTextID)) {
-                intent_save.putExtra("rds_name", mRdsTextID);
-            }
-            startActivityForResult(intent_save, SAVE_CODE);
+            saveChannel(position);
         } else {
             if (lastIcon != null) {
                 Log.d(TAG, "lastIcon is not null");
@@ -1585,7 +1572,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case SAVE_CODE:
-                if (resultCode == -1) {
+                if (resultCode == RESULT_OK) {
                     if (data == null) {
                         return;
                     }
@@ -1593,7 +1580,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     updateDisplayPanel(mCurFreq, true);
                     updatePresetSwitcher(lastPosition + 1);
                     updateListView();
-                    int id = data.getIntExtra("newSaved_id", 0);
+                    int id = data.getIntExtra(FMSaveChannel.EXTRA_PRESET_ID, 0);
                     LvChannel.setSelection(id);
                     lastPosition = id;
                     int clickPosition = lastPosition - LvChannel.getFirstVisiblePosition();
@@ -1618,23 +1605,18 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 }
                 break;
             case CLEAR_CODE:
-                if (resultCode == -1) {
-                    updateListView();
-                    boolean isClearAll = data.getBooleanExtra("isClearAll", false);
-                    if (isClearAll) {
-                        Log.d(TAG, "FMRadio clear all is true!");
+                if (resultCode == RESULT_OK) {
+                    boolean clearedAll = data.getBooleanExtra(FMClearChannel.EXTRA_CLEARED_ALL, false);
+                    if (clearedAll) {
+                        Log.d(TAG, "Cleared all FM stations");
                         Preferences.setScanned(this, false);
-                        LvChannel.setSelection(0);
                         lastPosition = 0;
-                        isPerformClick = true;
                         isEdit = false;
-                    } else {
-                        LvChannel.setSelection(lastPosition);
-                        isPerformClick = true;
                     }
-                } else {
-                    isPerformClick = true;
+                    updateListView();
+                    LvChannel.setSelection(lastPosition);
                 }
+                isPerformClick = true;
                 break;
         }
     }
@@ -2040,13 +2022,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         switch (item.getItemId()) {
             case SAVE_ID:
                 tempPosition = lastPosition;
-                Intent intent_save = new Intent(this, FMSaveChannel.class);
-                intent_save.putExtra("current_freq", mCurFreq);
-                intent_save.putExtra("current_num", getIndexOfEmptyItem());
-                if (!TextUtils.isEmpty(mRdsTextID)) {
-                    intent_save.putExtra("rds_name", mRdsTextID);
-                }
-                startActivityForResult(intent_save, 0);
+                saveChannel(getIndexOfEmptyItem());
                 break;
             case EDIT_ID:
                 tempPosition = lastPosition;
@@ -2055,8 +2031,8 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 startActivityForResult(intent_edit, 1);
                 break;
             case CLEAR_ID:
-                Intent intent_clear = new Intent(this, FMClearChannel.class);
-                startActivityForResult(intent_clear, 2);
+                Intent clearIntent = new Intent(this, FMClearChannel.class);
+                startActivityForResult(clearIntent, CLEAR_CODE);
                 break;
             case EXIT_ID:
                 Log.d(TAG, "User click Exit Menu to exit FM");
@@ -2263,5 +2239,13 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         }
 
         getContentResolver().update(FMUtil.CONTENT_URI, cv, "ID=" + id, null);
+    }
+
+    private void saveChannel(int position) {
+        Intent saveIntent = new Intent(this, FMSaveChannel.class);
+        saveIntent.putExtra(FMSaveChannel.EXTRA_FREQUENCY, mCurFreq);
+        saveIntent.putExtra(FMSaveChannel.EXTRA_PRESET_ID, position);
+        saveIntent.putExtra(FMSaveChannel.EXTRA_RDS_NAME, mRdsTextID);
+        startActivityForResult(saveIntent, SAVE_CODE);
     }
 }
