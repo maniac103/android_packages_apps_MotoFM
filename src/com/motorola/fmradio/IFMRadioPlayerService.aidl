@@ -12,9 +12,6 @@ interface IFMRadioPlayerService {
     boolean scan();
     boolean stopScan();
 
-    boolean setVolume(int volume);
-    int getVolume();
-
     int getAudioMode();
 
     boolean setAudioRouting(int mode);

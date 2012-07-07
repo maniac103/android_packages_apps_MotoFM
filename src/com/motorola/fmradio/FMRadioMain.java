@@ -70,7 +70,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     public static final String PRESET = "preset";
 
-    public static int DEFAULT_VOICE_VOLUME = 0;
     private static int LIGHT_ON_TIME = 90000;
     private static int PRESET_NUM = 20;
 
@@ -111,7 +110,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private static final int STOP_FMRADIO = 2;
     private static final int QUIT = 3;
     private static final int FM_OPEN_FAILED = 4;
-    private static final int FM_OPEN_SUCCEED = 5;
     private static final int FM_TUNE_SUCCEED = 6;
     private static final int FM_SEEK_SUCCEED = 7;
     private static final int FM_SEEK_FAILED = 8;
@@ -218,7 +216,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private boolean mInitSuccess = true;
     private BroadcastReceiver mIntentReceiver = null;
     private boolean mIsBound = false;
-    private ProgressBar mLevel;
     private int mLongPressButtonType = LONGPRESS_BUTTON_NONE;
     private Toast mPowerWaitingTS = null;
     private int mPreFreq = FMUtil.MIN_FREQUENCY;
@@ -228,7 +225,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private String mRdsTextDisplay = "";
     private String mRdsTextID = "";
     private int mRdsValuePTY = 0;
-    private ImageView mRingerStreamIcon;
     private AnimationDrawable mScanAnimation;
     private ImageView mScanBar;
     private SeekBar mSeekBar;
@@ -236,7 +232,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private int mShortPressButtonType = SHORTPRESS_BUTTON_NONE;
     private Timer mTimer;
     private TimerTask mTimerTask;
-    private Toast mToast;
     protected boolean mTuneSucceed = true;
     private WakeLock mWakeLock;
     private boolean mbIsFMStart = false;
@@ -251,8 +246,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private ImageButton seekBackButton;
     private ImageButton seekForwardButton;
     private int tempPosition = 0;
-    private int volume = DEFAULT_VOICE_VOLUME;
-    private View volumeView;
 
     private class ScanStopThread extends Thread {
         @Override
@@ -401,7 +394,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     enableUI(true);
                     Preferences.setEnabled(context, true);
                     isPerformClick = true;
-                    volume = Preferences.getVolume(context);
+                    mAudioMgr.setStreamVolume(AudioManager.STREAM_FM, Preferences.getVolume(context), 0);
                     if (isDBEmpty() || !Preferences.isScanned(context)) {
                         showDialog(DIALOG_IF_SCAN_FIRST);
                     }
@@ -429,18 +422,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     // pswitch_3
                     Preferences.setEnabled(context, false);
                     Toast.makeText(context, "FMRadio Open failed", Toast.LENGTH_SHORT).show();
-                    break;
-                case FM_OPEN_SUCCEED:
-                    // pswitch_4
-                    Log.d(TAG, "FM open succeed callback");
-                    Preferences.setEnabled(context, true);
-                    enableUI(true);
-                    volume = Preferences.getVolume(context);
-                    setFMRadioVolume(volume);
-                    isPerformClick = true;
-                    if (isDBEmpty() || !Preferences.isScanned(context)) {
-                        showDialog(DIALOG_IF_SCAN_FIRST);
-                    }
                     break;
                 case FM_TUNE_SUCCEED:
                     // pswitch_5
@@ -777,12 +758,8 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     private boolean bindToService() {
         Log.d(TAG, "Start to bind to FMRadio service");
-        boolean isLandscape = getResources().getConfiguration().orientation == 2;
-        String strPreset = FMUtil.getPresetStr(getContentResolver(), Integer.valueOf(mCurFreq), lastPosition, isLandscape);
         Intent i = new Intent(this, FMRadioPlayerService.class);
-        if (strPreset != null) {
-            i.putExtra(PRESET, strPreset);
-        }
+        i.putExtra(PRESET, lastPosition);
         startService(i);
         return bindService(i, mServConnection, 0);
     }
@@ -1018,7 +995,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     private void initResourceRefs() {
         Log.d(TAG, "enter initResourceRefs()");
-        initVolumeView();
         initImageSwitcher();
         initSeekBar();
         initButton();
@@ -1039,27 +1015,18 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         mSeekBar.setOnSeekBarChangeListener(this);
         mSeekBar.setEnabled(true);
 
+        mScanBar = (ImageView) findViewById(R.id.scan_anim);
+        mScanAnimation = (AnimationDrawable) getResources().getDrawable(R.drawable.fm_progress_red);
+
         mRdsMarqueeText = (MarqueeText) findViewById(R.id.rds_text);
         mRdsMarqueeText.setTextColor(Color.WHITE);
         mRdsMarqueeText.setTextSize(22);
     }
 
-    private void initVolumeView() {
-        LayoutInflater inflater  = LayoutInflater.from(this);
-        volumeView = inflater.inflate(R.layout.volume_control, null);
-
-        mLevel = (ProgressBar) volumeView.findViewById(R.id.level);
-        mLevel.setMax(15);
-        mScanBar = (ImageView) findViewById(R.id.scan_anim);
-        mScanAnimation = (AnimationDrawable) getResources().getDrawable(R.drawable.fm_progress_red);
-        mToast = new Toast(this);
-        mRingerStreamIcon = (ImageView) volumeView.findViewById(R.id.ringer_stream_icon);
-        mRingerStreamIcon.setImageResource(R.drawable.ic_mp_unmute);
-    }
-
     private void onCreateInternal() {
         Log.d(TAG, "**************FMRadioMain Activity onCreateInternal() called!****************");
         setContentView(R.layout.main);
+        setVolumeControlStream(AudioManager.STREAM_FM);
 
         mCurFreq = Preferences.getLastFrequency(this);
         lastPosition = Preferences.getLastChannel(this);
@@ -1156,8 +1123,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 Log.v(TAG, "Launcher broadcast Received " + action);
                 if (action.equals(FMRadioPlayerService.FM_OPEN_FAILED)) {
                     mHandler.sendEmptyMessage(FM_OPEN_FAILED);
-                } else if (action.equals(FMRadioPlayerService.FM_OPEN_SUCCEED)) {
-                    mHandler.sendEmptyMessage(FM_OPEN_SUCCEED);
                 } else if (action.equals(FMRadioPlayerService.FM_TUNE_SUCCEED)) {
                     mHandler.sendEmptyMessage(FM_TUNE_SUCCEED);
                 } else if (action.equals(FMRadioPlayerService.FM_SEEK_SUCCEED)) {
@@ -1210,22 +1175,13 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 } else if (action.equals(FMRadioPlayerService.FM_QUIT)) {
                     isExitFromUI = true;
                     finish();
-                } else if (action.equals("com.motorola.fmradio.setvolume")) {
-                    int eventAct = intent.getIntExtra("event_action", 0);
-                    int eventKeyCode = intent.getIntExtra("event_keycode", 0);
-                    if (eventAct == 0) {
-                        onKeyDown(eventKeyCode, null);
-                    } else if (eventAct == 1) {
-                        onKeyUp(eventKeyCode, null);
-                    }
                 } else if (action.equals(FMRadioPlayerService.FM_AUDIO_MODE_CHANGED)) {
                     updateStereoStatus();
                 }
             }
         };
 
-        IntentFilter i = new IntentFilter(FMRadioPlayerService.FM_OPEN_SUCCEED);
-        i.addAction(FMRadioPlayerService.FM_OPEN_FAILED);
+        IntentFilter i = new IntentFilter(FMRadioPlayerService.FM_OPEN_FAILED);
         i.addAction(FMRadioPlayerService.FM_TUNE_SUCCEED);
         i.addAction(FMRadioPlayerService.FM_SEEK_SUCCEED);
         i.addAction(FMRadioPlayerService.FM_SEEK_FAILED);
@@ -1235,7 +1191,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         i.addAction(FMRadioPlayerService.FM_RDS_DATA_AVAILABLE);
         i.addAction(FMRadioPlayerService.FM_QUIT);
         i.addAction(FMRadioPlayerService.FM_POWERON_SUCCESS);
-        i.addAction("com.motorola.fmradio.setvolume");
         i.addAction(FMRadioPlayerService.FM_SCAN_SUCCEED);
         i.addAction(FMRadioPlayerService.FM_SCANNING);
         i.addAction(FMRadioPlayerService.FM_SCAN_FAILED);
@@ -1293,22 +1248,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 mService.tune(mCurFreq);
             } catch (RemoteException e) {
                 Log.d(TAG, "In setFMRadioFrequency(): RemoteException.!");
-            }
-        }
-    }
-
-    private void setFMRadioVolume(int volume) {
-        Log.d(TAG, "setFMRadioVolume");
-        if (volume > 15) {
-            volume = 15;
-        } else if (volume < 0) {
-            volume = 0;
-        }
-        if (mService != null) {
-            try {
-                mService.setVolume(volume);
-            } catch (RemoteException e) {
-                Log.e(TAG, "set fmradio Volume failed");
             }
         }
     }
@@ -1701,27 +1640,9 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     @Override
     protected Dialog onCreateDialog(int id) {
-        final DialogInterface.OnKeyListener keyListener = new DialogInterface.OnKeyListener() {
-            @Override
-            public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
-                if (keyCode != KeyEvent.KEYCODE_VOLUME_DOWN && keyCode != KeyEvent.KEYCODE_VOLUME_UP) {
-                    return false;
-                }
-                if (event.getAction() == KeyEvent.ACTION_DOWN) {
-                    onKeyDown(keyCode, event);
-                    return true;
-                } else if (event.getAction() == KeyEvent.ACTION_UP) {
-                    onKeyUp(keyCode, event);
-                    return true;
-                }
-                return false;
-            }
-        };
-
         switch (id) {
             case DIALOG_PROGRESS:
                 pDialog = new ProgressDialog(this);
-                pDialog.setOnKeyListener(keyListener);
                 pDialog.setTitle(getString(R.string.fmradio_scanning_title));
                 pDialog.setMessage(getString(R.string.fmradio_scan_begin_msg));
                 pDialog.setIndeterminate(false);
@@ -1762,7 +1683,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 return pDialog;
             case DIALOG_SCAN_FINISH:
                 return new AlertDialog.Builder(this)
-                        .setOnKeyListener(keyListener)
                         .setTitle("Scan Completed")
                         .setMessage("Scaned and Saved " + count_save + " channels")
                         .setNegativeButton(R.string.close, new DialogInterface.OnClickListener() {
@@ -1773,7 +1693,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                         .create();
             case DIALOG_SCAN_CANCEL:
                 return new AlertDialog.Builder(this)
-                        .setOnKeyListener(keyListener)
                         .setTitle("Scan Canceled")
                         .setMessage("Scaned and Saved " + count_save + " channels")
                         .setNegativeButton(R.string.close, new DialogInterface.OnClickListener() {
@@ -1785,7 +1704,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
             case DIALOG_IF_SCAN_FIRST:
                 return new AlertDialog.Builder(this)
                         .setTitle(R.string.scan)
-                        .setOnKeyListener(keyListener)
                         .setMessage(R.string.fmradio_scan_confirm_msg)
                         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                             @Override
@@ -1807,7 +1725,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                         .create();
             case DIALOG_IF_SCAN_NEXT:
                 return new AlertDialog.Builder(this)
-                        .setOnKeyListener(keyListener)
                         .setTitle(R.string.scan)
                         .setMessage(R.string.fmradio_clear_confirm_msg)
                         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
@@ -1857,50 +1774,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         mPowerWaitingTS = null;
         unregisterReceiver(mIntentReceiver);
         mWakeLock.release();
-    }
-
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode != KeyEvent.KEYCODE_VOLUME_DOWN && keyCode != KeyEvent.KEYCODE_VOLUME_UP) {
-            return super.onKeyDown(keyCode, event);
-        }
-        int index = volume;
-        if (mRingerStreamIcon != null) {
-            mRingerStreamIcon.setImageResource(index == 0 ? R.drawable.ic_mp_mute : R.drawable.ic_mp_unmute);
-        }
-        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
-            volume++;
-            if (volume > 15) {
-                volume = 15;
-            }
-        } else {
-            volume--;
-            if (volume < 0) {
-                volume = 0;
-            }
-        }
-
-        setFMRadioVolume(volume);
-        Preferences.setVolume(this, volume);
-        mLevel.setProgress(index);
-        mToast.setView(volumeView);
-        mToast.setDuration(Toast.LENGTH_SHORT);
-        mToast.setGravity(Gravity.CENTER, 0, 0);
-        mToast.show();
-        return true;
-    }
-
-    @Override
-    public boolean onKeyUp(int keyCode, KeyEvent event) {
-        if (keyCode != KeyEvent.KEYCODE_VOLUME_DOWN && keyCode != KeyEvent.KEYCODE_VOLUME_UP) {
-            return super.onKeyUp(keyCode, event);
-        }
-        if (mRingerStreamIcon != null) {
-            mRingerStreamIcon.setImageResource(volume == 0 ? R.drawable.ic_mp_mute : R.drawable.ic_mp_unmute);
-        }
-        mLevel.setProgress(volume);
-
-        return super.onKeyUp(keyCode, event);
     }
 
     @Override

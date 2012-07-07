@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.BROADCAST_STICKY" />
     <supports-screens android:anyDensity="false" android:smallScreens="false" android:normalScreens="true" android:largeScreens="true" />
     <application android:label="@string/app_name" android:icon="@drawable/fm_radio_icon">
         <provider android:name="FMDataProvider" android:authorities="com.motorola.provider.fmradio" />

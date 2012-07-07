@@ -96,28 +96,6 @@ public class FMSaveChannel extends Activity implements View.OnClickListener {
         }
     }
 
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode != KeyEvent.KEYCODE_VOLUME_DOWN && keyCode != KeyEvent.KEYCODE_VOLUME_UP) {
-            return super.onKeyDown(keyCode, event);
-        }
-
-        int act = event.getAction();
-        noticeFMRadioMainUpdateVol("com.motorola.fmradio.setvolume", act, keyCode);
-        return true;
-    }
-
-    @Override
-    public boolean onKeyUp(int keyCode, KeyEvent event) {
-        if (keyCode != KeyEvent.KEYCODE_VOLUME_DOWN && keyCode != KeyEvent.KEYCODE_VOLUME_UP) {
-            return super.onKeyUp(keyCode, event);
-        }
-
-        int act = event.getAction();
-        noticeFMRadioMainUpdateVol("com.motorola.fmradio.setvolume", act, keyCode);
-        return true;
-    }
-
     private void initNameFilter() {
         InputFilter[] oldFilter = mNameField.getFilters();
         int oldLen = oldFilter.length;
@@ -164,13 +142,6 @@ public class FMSaveChannel extends Activity implements View.OnClickListener {
             mPresetSpinner.setAdapter(adapter);
             mPresetSpinner.setSelection(preset);
         }
-    }
-
-    private void noticeFMRadioMainUpdateVol(String cmd, int action, int keyCode) {
-        Intent intent = new Intent(cmd);
-        intent.putExtra("event_action", action);
-        intent.putExtra("event_keycode", keyCode);
-        sendBroadcast(intent);
     }
 
     private void doSave() {
