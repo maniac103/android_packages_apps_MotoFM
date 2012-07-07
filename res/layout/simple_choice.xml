@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <CheckedTextView
-        android:id="@id/text1"
+        android:id="@+id/text1"
         android:textAppearance="?android:textAppearanceMedium"
         android:textColor="#ffffffff"
         android:gravity="center_vertical"

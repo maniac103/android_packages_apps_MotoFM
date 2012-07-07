@@ -20,6 +20,7 @@ import android.os.PowerManager.WakeLock;
 import android.os.RemoteException;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.widget.Toast;
@@ -85,8 +86,8 @@ public class FMRadioPlayerService extends Service {
     private static final int HEADSET_PLUG_STATE_CHANGED_MSG = 2;
     private static final int AUDIO_PATH_FREE = 3;
     private static final int AUDIO_PATH_BUSY = 4;
-    private static final int ACTION_POWERON_FMBT = 6;
     private static final int ACTION_AIRPLANE_MODE_CHANGED_MSG = 5;
+    private static final int ACTION_POWERON_FMBT = 6;
     private static final int ACTION_POWEROFF_FMBT = 7;
     private static final int ACTION_INIT_FIRMWARE = 8;
     private static final int ACTION_SET_BAND = 9;
@@ -94,43 +95,29 @@ public class FMRadioPlayerService extends Service {
     private static final int ACTION_TUNE_CHANNEL = 12;
     private static final int ACTION_SEEK_CHANNEL = 13;
     private static final int ACTION_SET_VOLUME = 14;
-    private static final int ACTION_SET_MUTE = 15;
-    private static final int ACTION_GET_RDS_TEXT = 16;
-    private static final int ACTION_GET_RDS_VALUE = 17;
     private static final int MUSIC_PLAYSTATE_CHANGED = 18;
-    private static final int SERVICE_SELFSTOP = 19;
-
-    private static String mRdsText = "";
-    private static int mRdsValue = 0;
 
     private IFMRadioService mIFMRadioService = null;
     private FMServiceStateBase mServiceState = null;
 
     private AudioManager am;
-    private NotificationManager mNM;
+    private Notification mNotification;
+    private PendingIntent mActivityIntent;
 
     private boolean isInitial = true;
-    protected boolean mBindSucceed = false;
     private boolean mIgnoreRdsEvent = false;
-    protected boolean mIsBGMode = false;
     private boolean mIsHeadsetPlugged = true;
     private boolean mTuneFirst = false;
-    private boolean misMuted = false;
     private boolean misPowerOn = false;
 
     private int mAudioMode = 0;
     private int mAudioRouting = AudioManager_ROUTE_FM_HEADSET;
     private int mCurFreq = FMUtil.MIN_FREQUENCY;
-    private int mPreFreq = FMUtil.MIN_FREQUENCY;
     private int mCurVolume = 0;
     protected int mHeadset = -1;
-    private int mRdsStatus = 0;
     private String mRdsTextDisplay = "";
     private String mRdsTextID = "";
     private int mRdsValuePTY = 0;
-    private int mSeekStartFreq = 0;
-
-    private final Object mLock = new Object();
     private WakeLock mWakeLock;
 
     private BroadcastReceiver mReceiver = null;
@@ -156,14 +143,6 @@ public class FMRadioPlayerService extends Service {
             return mAudioRouting;
         }
 
-        protected String getRdsText(int id) {
-            return "";
-        }
-
-        protected int getRdsValue(int id) {
-            return 0;
-        }
-
         protected int getVolume() {
             Log.d(TAG, "FMServiceStateBase:getVolume() volume is : " + mCurVolume);
             return mCurVolume;
@@ -171,11 +150,6 @@ public class FMRadioPlayerService extends Service {
 
         public void ignoreRdsEvent(boolean isIgnoreRds) {
             mIgnoreRdsEvent = isIgnoreRds;
-        }
-
-        protected boolean isMute() {
-            Log.d(TAG, "FMServiceStateBase:setMute() ... Mute is : " + misMuted);
-            return misMuted;
         }
 
         protected boolean isPowerOn() {
@@ -210,15 +184,6 @@ public class FMRadioPlayerService extends Service {
 
         protected boolean setAudioRouting(int routing) {
             Log.w(TAG, "FMServiceStateBase:setAudioRouting(" + routing + ")");
-            return false;
-        }
-
-        public void setBGMode(boolean background) {
-            mIsBGMode = background;
-        }
-
-        protected boolean setMute(int mode) {
-            Log.d(TAG, "FMServiceStateBase:setMute() rejected ... SM State is : " + curState);
             return false;
         }
 
@@ -311,48 +276,6 @@ public class FMRadioPlayerService extends Service {
         }
 
         @Override
-        protected String getRdsText(int id) {
-            Log.d(TAG, "FMStateReady:getRdsText(): id = " + id);
-            synchronized (mLock) {
-                try {
-                    Message msg = Message.obtain(mHandler, ACTION_GET_RDS_TEXT, Integer.valueOf(id));
-                    mHandler.sendMessage(msg);
-                } catch (Exception e) {
-                }
-                try {
-                    mLock.wait();
-                } catch (InterruptedException e) {
-                    Log.e(TAG, "wait Failed: " + e.getMessage());
-                    Log.d(TAG, "FMStateReady:getRdsText() interrupted while trying to read RDS data");
-                } catch (Exception e) {
-                }
-            }
-
-            return mRdsText;
-        }
-
-        @Override
-        protected int getRdsValue(int id) {
-            Log.d(TAG, "FMStateReady:getRdsValue(): id = " + id);
-            synchronized (mLock) {
-                try {
-                    Message msg = Message.obtain(mHandler, ACTION_GET_RDS_VALUE, Integer.valueOf(id));
-                    mHandler.sendMessage(msg);
-                } catch (Exception e) {
-                }
-                try {
-                    mLock.wait();
-                } catch (InterruptedException e) {
-                    Log.e(TAG, "wait Failed: " + e.getMessage());
-                    Log.d(TAG, "FMStateReady:getRdsValue() interrupted while trying to red RDS data");
-                } catch (Exception e) {
-                }
-            }
-
-            return mRdsValue;
-        }
-
-        @Override
         protected boolean isPowerOn() {
             Log.d(TAG, "FMStateReady:isPowerOn(), return misPowerOn value to UI");
             return misPowerOn;
@@ -386,7 +309,6 @@ public class FMRadioPlayerService extends Service {
         protected boolean seek(int freq, int direction) {
             Log.d(TAG, "FMStateReady:seek(), seek start = " + freq + ", seek direction = " + direction);
             Message msg = Message.obtain(mHandler, ACTION_SEEK_CHANNEL, Integer.valueOf(direction));
-            mSeekStartFreq = freq;
             mHandler.sendMessage(msg);
             return true;
         }
@@ -396,15 +318,6 @@ public class FMRadioPlayerService extends Service {
             Log.w(TAG, "FMStateReady:setAudioRouting(" + routing + ")");
             mAudioRouting = routing;
             audioPrepare(routing);
-            return true;
-        }
-
-        @Override
-        protected boolean setMute(int mode) {
-            Log.d(TAG, "FMStateReady:setMute(): mode = " + mode);
-            Message msg = Message.obtain(mHandler, ACTION_SET_MUTE, Integer.valueOf(mode));
-            misMuted = mode == 1;
-            mHandler.sendMessage(msg);
             return true;
         }
 
@@ -522,10 +435,10 @@ public class FMRadioPlayerService extends Service {
                     }
                     break;
                 case 1:
-                    mPreFreq = mCurFreq;
+                    int preFreq = mCurFreq;
                     mCurFreq = Integer.parseInt(value);
                     Log.w(TAG, "OnCommandCompleteListener : FM_CMD_SEEK_COMPLETE = " + status);
-                    if (mPreFreq == mCurFreq) {
+                    if (preFreq == mCurFreq) {
                         if (mCurFreq == FMUtil.MAX_FREQUENCY || mCurFreq == FMUtil.MIN_FREQUENCY) {
                             status = 0;
                         }
@@ -563,7 +476,6 @@ public class FMRadioPlayerService extends Service {
                     if (mIgnoreRdsEvent) {
                         Log.w(TAG, "RDS information was ignored by UI.");
                     } else {
-                        mRdsStatus = cmd;
                         mRdsTextID = mIFMRadioService.getRDSStationName();
                         notifyCmdResults(FM_RDS_DATA_AVAILABLE, Integer.valueOf(mCurFreq));
                     }
@@ -574,7 +486,6 @@ public class FMRadioPlayerService extends Service {
                     if (mIgnoreRdsEvent) {
                         Log.w(TAG, "RDS information was ignored by UI.");
                     } else {
-                        mRdsStatus = cmd;
                         mRdsTextDisplay = value;
                         notifyCmdResults(FM_RDS_DATA_AVAILABLE, Integer.valueOf(mCurFreq));
                     }
@@ -586,7 +497,6 @@ public class FMRadioPlayerService extends Service {
                         Log.w(TAG, "RDS information was ignored by UI.");
                     } else if (mIFMRadioService.getBand() == 0) {
                         Log.w(TAG, "US Band: Get Station Call Name and send to UI layer");
-                        mRdsStatus = 4;
                         mRdsTextID = mIFMRadioService.getRDSStationName();
                         notifyCmdResults(FM_RDS_DATA_AVAILABLE, Integer.valueOf(mCurFreq));
                     }
@@ -597,7 +507,6 @@ public class FMRadioPlayerService extends Service {
                     if (mIgnoreRdsEvent) {
                         Log.w(TAG, "RDS information was ignored by UI.");
                     } else {
-                        mRdsStatus = cmd;
                         if (mIFMRadioService.getBand() == 0) {
                             mRdsValuePTY = Integer.parseInt(value) + 32;
                         } else {
@@ -737,22 +646,6 @@ public class FMRadioPlayerService extends Service {
         }
 
         @Override
-        public String getRdsText(int id) {
-            return mServiceState.getRdsText(id);
-        }
-
-        @Override
-        public int getRdsValue(int id) {
-            return mServiceState.getRdsValue(id);
-        }
-
-        @Override
-        public int getServiceStatus() {
-            Log.d(TAG, "IFMRadioPlayerService.Stub : getServiceStatus, state=" + mServiceState.curServiceState());
-            return mServiceState.curServiceState();
-        }
-
-        @Override
         public int getVolume() {
             Log.d(TAG, "IFMRadioPlayerService.Stub : getVolume");
             return mServiceState.getVolume();
@@ -761,12 +654,6 @@ public class FMRadioPlayerService extends Service {
         @Override
         public void ignoreRdsEvent(boolean isIgnoreRds) {
             mServiceState.ignoreRdsEvent(isIgnoreRds);
-        }
-
-        @Override
-        public boolean isMute() {
-            Log.w(TAG, "IFMRadioPlayerService.Stub : isMute");
-            return mServiceState.isMute();
         }
 
         @Override
@@ -806,17 +693,6 @@ public class FMRadioPlayerService extends Service {
         }
 
         @Override
-        public void setBGMode(boolean background) {
-            mServiceState.setBGMode(background);
-        }
-
-        @Override
-        public boolean setMute(int mode) {
-            Log.w(TAG, "IFMRadioPlayerService.Stub : setMute");
-            return mServiceState.setMute(mode);
-        }
-
-        @Override
         public boolean setVolume(int volume) {
             Log.w(TAG, "IFMRadioPlayerService.Stub : setVolume");
             return mServiceState.setVolume(volume);
@@ -845,7 +721,7 @@ public class FMRadioPlayerService extends Service {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case 2:
+                case HEADSET_PLUG_STATE_CHANGED_MSG:
                     Log.v(TAG, "handleMessage headset plug begin");
                     mHeadset = msg.arg1;
                     Log.v(TAG, "mHeadset = " + mHeadset);
@@ -870,45 +746,37 @@ public class FMRadioPlayerService extends Service {
                         notifyCmdResults(FM_QUIT, null);
                     }
                     break;
-                case 3:
+                case AUDIO_PATH_FREE:
                     Log.d(TAG, "Serv-mHandler: AUDIO_PATH_FREE");
-                    try {
-                        mIFMRadioService.setMute(1);
-                    } catch (RemoteException e) {
-                        Log.e(TAG, "setMute Failed: " + e.getMessage());
-                    }
+                    setFMMuteState(true);
                     break;
-                case 4:
+                case AUDIO_PATH_BUSY:
                     Log.d(TAG, "Serv-mHandler: AUDIO_PATH_BUSY");
-                    try {
-                        mIFMRadioService.setMute(1);
-                    } catch (RemoteException e) {
-                        Log.e(TAG, "setMute Failed: " + e.getMessage());
-                    }
+                    setFMMuteState(true);
                     break;
-                case 5:
+                case ACTION_AIRPLANE_MODE_CHANGED_MSG:
                     Log.d(TAG, "Send message to UI for airplane mode is true");
                     showNoticeDialog(R.string.fmradio_airplane_mode_enable_in_listen);
                     notifyCmdResults(FM_QUIT, null);
                     break;
-                case 6:
+                case ACTION_POWERON_FMBT:
                     Log.d(TAG, "Serv-mHandler: ACTION_POWERON_FMBT");
                     if (!misPowerOn) {
                         bindService(new Intent("com.motorola.android.fmradio.FMRADIO_SERVICE"), mConnection, 1);
                     }
                     break;
-                case 7:
+                case ACTION_POWEROFF_FMBT:
                     Log.d(TAG, "Serv-mHandler: ACTION_POWEROFF_FMBT");
                     am.setMode(AudioManager.MODE_NORMAL);
                     unbindService(mConnection);
                     break;
-                case 8:
+                case ACTION_INIT_FIRMWARE:
                     Log.d(TAG, "Serv-mHandler: ACTION_INIT_FIRMWARE");
                     if (!misPowerOn) {
                         bindService(new Intent("com.motorola.android.fmradio.FMRADIO_SERVICE"), mConnection, 1);
                     }
                     break;
-                case 9:
+                case ACTION_SET_BAND:
                     Log.d(TAG, "Serv-mHandler: ACTION_SET_BAND");
                     if (mIsHeadsetPlugged) {
                         audioPrepare(AudioManager_ROUTE_FM_HEADSET);
@@ -921,14 +789,12 @@ public class FMRadioPlayerService extends Service {
                         Log.e(TAG, "setBand Failed: " + e.getMessage());
                     }
                     break;
-                case 10:
-                    break;
-                case 11:
+                case ACTION_DEINIT_FIRMWARE:
                     Log.d(TAG, "Serv-mHandler: ACTION_DEINIT_FIRMWARE");
                     am.setMode(AudioManager.MODE_NORMAL);
                     unbindService(mConnection);
                     break;
-                case 12:
+                case ACTION_TUNE_CHANNEL:
                     Log.d(TAG, "Serv-mHandler: ACTION_TUNE_CHANNEL");
                     try {
                         mIFMRadioService.tune((Integer) msg.obj);
@@ -937,7 +803,7 @@ public class FMRadioPlayerService extends Service {
                         notifyCmdResults(FM_HW_ERROR_FRQ, null);
                     }
                     break;
-                case 13:
+                case ACTION_SEEK_CHANNEL:
                     Log.d(TAG, "Serv-mHandler: ACTION_SEEK_CHANNEL");
                     try {
                         mIFMRadioService.seek((Integer) msg.obj);
@@ -946,7 +812,7 @@ public class FMRadioPlayerService extends Service {
                         notifyCmdResults(FM_SEEK_FAILED, null);
                     }
                     break;
-                case 14:
+                case ACTION_SET_VOLUME:
                     Log.d(TAG, "Serv-mHandler: ACTION_SET_VOLUME to " + msg.obj);
                     try {
                         mIFMRadioService.setVolume((Integer) msg.obj);
@@ -954,34 +820,11 @@ public class FMRadioPlayerService extends Service {
                         Log.e(TAG, "setVolume Failed: " + e.getMessage());
                     }
                     break;
-                case 15:
-                    Log.d(TAG, "Serv-mHandler: ACTION_SET_MUTE");
-                    try {
-                        mIFMRadioService.setMute((Integer) msg.obj);
-                    } catch (RemoteException e) {
-                        Log.e(TAG, "setMute Failed: " + e.getMessage());
-                    }
-                    break;
-                case 16:
-                    Log.d(TAG, "Serv-mHandler: ACTION_GET_RDS_TEXT");
-                    synchronized (mLock) {
-                        mLock.notifyAll();
-                    }
-                    break;
-                case 17:
-                    Log.d(TAG, "Serv-mHandler: ACTION_GET_RDS_VALUE");
-                    synchronized (mLock) {
-                        mLock.notifyAll();
-                    }
-                    break;
-                case 18:
+                case MUSIC_PLAYSTATE_CHANGED:
                     if (isMusicPlaying()) {
                         showNoticeDialog(R.string.fmradio_music_playing_in_listen);
                         notifyCmdResults(FM_QUIT, null);
                     }
-                    break;
-                case 19:
-                    stopSelf();
                     break;
             }
         }
@@ -1008,17 +851,12 @@ public class FMRadioPlayerService extends Service {
         Intent i = new Intent(what);
         if (what.equals(FM_QUIT)) {
             restoreAudioRoute();
-            if (mIsBGMode) {
-                mHandler.sendEmptyMessage(SERVICE_SELFSTOP);
-                mIsBGMode = false;
-                return;
-            }
+            stopSelf();
         } else if (what.equals(FM_SEEK_SUCCEED) || what.equals(FM_SEEK_SUCCEED_AND_REACHLIMIT) || what.equals(FM_SCANNING) || what.equals(FM_SCAN_SUCCEED)) {
             Log.d(TAG, "in notifyCmdResults adding frequency value = " + Integer.parseInt(value.toString()));
             i.putExtra("freq", Integer.parseInt(value.toString()));
         } else if (what.equals(FM_RDS_DATA_AVAILABLE)) {
             i.putExtra("freq", Integer.parseInt(value.toString()));
-            i.putExtra("rds_status", mRdsStatus);
             i.putExtra("rds_text_display", mRdsTextDisplay);
             i.putExtra("rds_text_id", mRdsTextID);
             i.putExtra("rds_value_pty", mRdsValuePTY);
@@ -1036,17 +874,7 @@ public class FMRadioPlayerService extends Service {
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
                 Log.d(TAG, "Received intent: " + action);
-                if (action.equals(FMRadioMain.BIND_SERVICE_SUCCEED)) {
-                    Log.d(TAG, "bind service succeed");
-                    mBindSucceed = true;
-                    if (isAirplaneModeOn()) {
-                        showNoticeDialog(R.string.fmradio_airplane_mode_enable_at_begin);
-                        notifyCmdResults(FM_QUIT, null);
-                    }
-                    Log.w(TAG, "Notice home to show update current preset name on the notice bar. ");
-                    String preset = intent.getStringExtra(FMRadioMain.PRESET);
-                    updateNotification(true, preset);
-                } else if (action.equals(Intent.ACTION_HEADSET_PLUG)) {
+                if (action.equals(Intent.ACTION_HEADSET_PLUG)) {
                     int state = intent.getIntExtra("state", 0);
                     Log.d(TAG, "HEADSET is pluged in/out.");
                     Message message = Message.obtain(mHandler, HEADSET_PLUG_STATE_CHANGED_MSG, state, 0);
@@ -1064,44 +892,28 @@ public class FMRadioPlayerService extends Service {
                 } else if (action.equals(ACTION_AUDIOPATH_BUSY)) {
                     Log.d(TAG, "Audio Path is unavailabel." + intent.getIntExtra("state", 0));
                     mHandler.sendEmptyMessage(AUDIO_PATH_BUSY);
-                } else if (action.equals(ACTION_MUSIC_PLAYSTATE_CHANGED) && mBindSucceed) {
+                } else if (action.equals(ACTION_MUSIC_PLAYSTATE_CHANGED)) {
                     mHandler.sendEmptyMessage(MUSIC_PLAYSTATE_CHANGED);
                 } else if (action.equals(FMRadioMain.PRESET_CHANGED)) {
-                    String preset = intent.getStringExtra(FMRadioMain.PRESET);
-                    updateNotification(true, preset);
+                    updateNotification(intent.getIntExtra(FMRadioMain.PRESET, -1));
                 } else if (action.equals(ACTION_FMRADIO_COMMAND)) {
                     Log.d(TAG, "receive fmradio command");
                     String cmd = intent.getStringExtra(COMMAND);
                     Log.w(TAG, "receive ACTION_FMRADIO_COMMAND cmd=" + cmd);
                     if (cmd.equals(MUTE)) {
                         Log.d(TAG, "set fmradio to mute");
-                        try {
-                            mIFMRadioService.setMute(1);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "setMute Failed: " + e.getMessage());
-                        }
+                        setFMMuteState(true);
                     } else if (cmd.equals(UNMUTE)) {
                         Log.d(TAG, "set fmradio to unmute");
-                        try {
-                            mIFMRadioService.setMute(0);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "setMute Failed: " + e.getMessage());
-                        }
+                        setFMMuteState(false);
                     } else if (cmd.equals(STOP)) {
                         Log.d(TAG, "FM will exit for Video/audio player");
                         notifyCmdResults(FM_QUIT, null);
                     }
                     // XXX: CMD_START?
-                } else if (action.equals(FMRadioMain.SERVICE_STOP)) {
-                    mHandler.sendEmptyMessage(SERVICE_SELFSTOP);
                 } else if (action.equals(TelephonyManager.ACTION_PHONE_STATE_CHANGED)) {
                     String phoneState = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
                     Log.d(TAG, "ACTION_PHONE_STATE_CHANGED " + phoneState);
-                    try {
-                        mIFMRadioService.setMute(1);
-                    } catch (RemoteException e) {
-                        Log.e(TAG, "setMute Failed: " + e.getMessage());
-                    }
                     if (phoneState.equals(TelephonyManager.EXTRA_STATE_IDLE)) {
                         try {
                             Thread.sleep(3000);
@@ -1116,13 +928,11 @@ public class FMRadioPlayerService extends Service {
                             audioPrepare(AudioManager_ROUTE_FM_HEADSET);
                             audioPrepare(AudioManager_ROUTE_FM_SPEAKER);
                         }
-                        try {
-                            mIFMRadioService.setMute(misMuted ? 1 : 0);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "setMute Failed: " + e.getMessage());
-                        }
+                        setFMMuteState(false);
                         audioPrepare(mAudioRouting);
                         resetVolume();
+                    } else {
+                        setFMMuteState(true);
                     }
                 }
             }
@@ -1141,15 +951,12 @@ public class FMRadioPlayerService extends Service {
         registerReceiver(mReceiver, new IntentFilter(ACTION_AUDIOPATH_FREE));
         registerReceiver(mReceiver, new IntentFilter(ACTION_AUDIOPATH_BUSY));
         registerReceiver(mReceiver, new IntentFilter(ACTION_MUSIC_PLAYSTATE_CHANGED));
-        registerReceiver(mReceiver, new IntentFilter(FMRadioMain.BIND_SERVICE_SUCCEED));
         registerReceiver(mReceiver, new IntentFilter(FMRadioMain.PRESET_CHANGED));
-        registerReceiver(mReceiver, new IntentFilter(FMRadioMain.SERVICE_STOP));
         Log.d(TAG, "register fmradio command");
         registerReceiver(mReceiver, new IntentFilter(ACTION_FMRADIO_COMMAND));
     }
 
     private void resetRDSData() {
-        mRdsStatus = 0;
         mRdsTextID = "";
         mRdsValuePTY = 0;
         mRdsTextDisplay = "";
@@ -1182,8 +989,14 @@ public class FMRadioPlayerService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         Log.d(TAG, "onBind() called");
-        updateNotification(true, "");
-        registerBroadcastListener();
+        if (isAirplaneModeOn()) {
+            showNoticeDialog(R.string.fmradio_airplane_mode_enable_at_begin);
+            notifyCmdResults(FM_QUIT, null);
+        } else {
+            registerBroadcastListener();
+            Log.w(TAG, "Notice home to show update current preset name on the notice bar. ");
+            updateNotification(intent.getIntExtra(FMRadioMain.PRESET, -1));
+        }
         return mBinder;
     }
 
@@ -1192,12 +1005,21 @@ public class FMRadioPlayerService extends Service {
         Log.e(TAG, "onCreate() called");
         super.onCreate();
         isInitial = true;
-        mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         am = (AudioManager) getSystemService(AUDIO_SERVICE);
 
         PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
         mWakeLock = pm.newWakeLock(1, getClass().getName());
         mWakeLock.setReferenceCounted(false);
+
+        Intent launchIntent = new Intent();
+        launchIntent.setAction(Intent.ACTION_MAIN);
+        launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        launchIntent.setComponent(new ComponentName("com.motorola.fmradio", "com.motorola.fmradio.FMRadioMain"));
+        launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+
+        mActivityIntent = PendingIntent.getActivity(this, 0, launchIntent, 0);
+        mNotification = new Notification(R.drawable.fm_statusbar_icon, null, System.currentTimeMillis());
+        mNotification.flags |= Notification.FLAG_ONGOING_EVENT;
 
         mServiceState = new FMStateUNInit();
     }
@@ -1206,7 +1028,7 @@ public class FMRadioPlayerService extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.w(TAG, "onDestroy() called, curState = " + mServiceState.curServiceState());
-        updateNotification(false, null);
+        stopForeground(true);
         if (mReceiver != null) {
             Log.d(TAG, "unregister Receiver.");
             unregisterReceiver(mReceiver);
@@ -1226,7 +1048,6 @@ public class FMRadioPlayerService extends Service {
     @Override
     public void onRebind(Intent intent) {
         Log.d(TAG, "onRebind() called");
-        updateNotification(true, "");
         registerBroadcastListener();
     }
 
@@ -1252,7 +1073,7 @@ public class FMRadioPlayerService extends Service {
         super.onUnbind(intent);
 
         if (mServiceState.curServiceState() != 2) {
-            updateNotification(false, null);
+            stopForeground(true);
             if (mReceiver != null) {
                 Log.d(TAG, "unregister Receiver.");
                 unregisterReceiver(mReceiver);
@@ -1262,24 +1083,46 @@ public class FMRadioPlayerService extends Service {
         return true;
     }
 
-    private void updateNotification(boolean show, String text) {
-        final int id = R.string.fmradio_service_label;
-        if (show) {
-            Intent launchIntent = new Intent();
-            launchIntent.setAction(Intent.ACTION_MAIN);
-            launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-            launchIntent.setComponent(new ComponentName("com.motorola.fmradio", "com.motorola.fmradio.FMRadioMain"));
-            launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-
-            PendingIntent contentIntent = PendingIntent.getActivity(this, 0, launchIntent, 0);
-
-            Notification notification = new Notification(R.drawable.fm_statusbar_icon, "", System.currentTimeMillis());
-            notification.setLatestEventInfo(this, text, null, contentIntent);
-            notification.flags |= Notification.FLAG_ONGOING_EVENT;
-
-            mNM.notify(id, notification);
-        } else {
-            mNM.cancel(id);
+    private void setFMMuteState(boolean mute) {
+        Log.d(TAG, "setFMMuteState (" + mute + ")");
+        try {
+            mIFMRadioService.setMute(mute ? 1 : 0);
+        } catch (RemoteException e) {
+            Log.e(TAG, "Setting FM mute state failed", e);
         }
+    }
+
+    private void updateNotification(int preset) {
+        final String frequencyString = FMUtil.formatFrequency(this, (float) mCurFreq / 1000.0F);
+        String title = null, text = null;
+
+        if (preset >= 0) {
+            Cursor cursor = getContentResolver().query(FMUtil.CONTENT_URI, FMUtil.PROJECTION, "ID=" + preset, null, null);
+            if (cursor != null) {
+                cursor.moveToFirst();
+
+                String name = cursor.getString(FMUtil.FM_RADIO_INDEX_CHNAME);
+                String rdsName = cursor.getString(FMUtil.FM_RADIO_INDEX_CHRDSNAME);
+
+                text = frequencyString;
+                if (!TextUtils.isEmpty(name)) {
+                    title = name;
+                } else if (!TextUtils.isEmpty(rdsName)) {
+                    title = rdsName;
+                } else {
+                    preset = -1;
+                }
+                cursor.close();
+            } else {
+                preset = -1;
+            }
+        }
+
+        if (preset < 0) {
+            title = frequencyString;
+            text = null;
+        }
+        mNotification.setLatestEventInfo(this, title != null ? title : "", text != null ? text : "", mActivityIntent);
+        startForeground(R.string.fmradio_service_label, mNotification);
     }
 }

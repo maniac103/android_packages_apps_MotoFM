@@ -8,6 +8,8 @@ import android.net.Uri;
 import android.view.Gravity;
 import android.widget.Toast;
 
+import java.text.DecimalFormat;
+
 public class FMUtil {
     public static final String AUTHORITY = "com.motorola.provider.fmradio";
     public static final Uri CONTENT_URI = Uri.parse("content://com.motorola.provider.fmradio/FM_Radio");
@@ -130,5 +132,10 @@ public class FMUtil {
         Toast ts = Toast.makeText(context, context.getString(noticeId), Toast.LENGTH_LONG);
         ts.setGravity(Gravity.CENTER, 0, 0);
         ts.show();
+    }
+
+    public static String formatFrequency(Context context, float frequency) {
+        DecimalFormat formatter = new DecimalFormat(".0");
+        return formatter.format(frequency) + context.getString(R.string.mhz);
     }
 }

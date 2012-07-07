@@ -66,9 +66,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private static final String TAG = "FMRadioMain";
     public static String TAG_LISTVIEW = "FMRadioMain ChannelListView";
 
-    public static final String BIND_SERVICE_SUCCEED = "com.motorola.fmradio.bindservice.succeed";
     public static final String PRESET_CHANGED = "com.motorola.fmradio.preset.changed";
-    public static final String SERVICE_STOP = "com.motorola.fmradio.service.stop";
 
     public static final String PRESET = "preset";
 
@@ -227,7 +225,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private int mRDSFreq = 0;
     private boolean mRdsAvailable = false;
     private MarqueeText mRdsMarqueeText;
-    private int mRdsStatus = 0;
     private String mRdsTextDisplay = "";
     private String mRdsTextID = "";
     private int mRdsValuePTY = 0;
@@ -373,24 +370,12 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 } catch (RemoteException e) {
                     Log.e(TAG, "Justfy if chip power on failed");
                 }
-                try {
-                    mService.setBGMode(false);
-                } catch (RemoteException e) {
-                    Log.e(TAG, e.getMessage());
-                }
             }
             if (!bPowerStatus) {
                 if (pDialog_waitpoweron == null) {
                     pDialog_waitpoweron = ProgressDialog.show(FMRadioMain.this, "", getResources().getText(R.string.fmradio_waiting_for_power_on), true, true);
                     Log.w(TAG, "servie is ready popup a wait dialog");
                 }
-                boolean isLandscape = getResources().getConfiguration().orientation == 2;
-                String strPreset = FMUtil.getPresetStr(getContentResolver(), Integer.valueOf(mCurFreq), lastPosition, isLandscape);
-                Intent i = new Intent(BIND_SERVICE_SUCCEED);
-                if (strPreset != null) {
-                    i.putExtra(PRESET, strPreset);
-                }
-                sendBroadcast(i);
             } else  if (!mbIsFMStart) {
                 mHandler.sendEmptyMessage(START_FMRADIO);
                 mbIsFMStart = true;
@@ -409,8 +394,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         @Override
         public void handleMessage(Message msg) {
             final Context context = FMRadioMain.this;
-            boolean isLandscape = getResources().getConfiguration().orientation == 2;
-            String strPreset;
 
             switch (msg.what) {
                 case START_FMRADIO:
@@ -465,8 +448,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     enableUI(true);
                     ignoreRdsEvent(false);
                     mTuneSucceed = true;
-                    strPreset = FMUtil.getPresetStr(getContentResolver(), mCurFreq, lastPosition, isLandscape);
-                    sendCMDtoService(PRESET_CHANGED, PRESET, strPreset);
+                    signalPresetChanged(lastPosition);
                     Log.d(TAG, "FM Tune succeed callback");
                     break;
                 case FM_SEEK_FAILED:
@@ -539,8 +521,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                         updateDisplayPanel(mCurFreq, updatePresetSwitcher());
                         displayRdsScrollByCurFreq(false);
                         enableUI(true);
-                        strPreset = FMUtil.getPresetStr(getContentResolver(), mCurFreq, lastPosition, isLandscape);
-                        sendCMDtoService(PRESET_CHANGED, PRESET, strPreset);
+                        signalPresetChanged(lastPosition);
                         ScanStopThread sThread = new ScanStopThread();
                         mHandler.postDelayed(sThread, SCAN_STOP_DELAY);
                     }
@@ -577,8 +558,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                         }
                         updateListView();
                         LvChannel.setSelection(0);
-                        strPreset = FMUtil.getPresetStr(getContentResolver(), mCurFreq, lastPosition, isLandscape);
-                        sendCMDtoService(PRESET_CHANGED, PRESET, strPreset);
+                        signalPresetChanged(lastPosition);
                         lastPosition = 0;
                         isPerformClick = true;
                         count_save = 0;
@@ -604,8 +584,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                         Toast ts = Toast.makeText(FMRadioMain.this, sb.toString(), Toast.LENGTH_SHORT);
                         ts.setGravity(Gravity.CENTER, 0, 0);
                         ts.show();
-                        strPreset = FMUtil.getPresetStr(getContentResolver(), mCurFreq, lastPosition, isLandscape);
-                        sendCMDtoService(PRESET_CHANGED, PRESET, strPreset);
+                        signalPresetChanged(lastPosition);
                         if (lastIcon != null) {
                             lastIcon.setVisibility(View.INVISIBLE);
                         }
@@ -661,7 +640,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     break;
                 case FM_RDS_DATA_AVAILABLE:
                     Log.d(TAG, "FM RDS data available!");
-                    if (mRdsStatus == 4 && mRdsAvailable && mRdsTextID.length() > 0) {
+                    if (mRdsAvailable && mRdsTextID.length() > 0) {
                         Log.d(TAG, "station name available");
                         String sFreq = Float.toString((float) mCurFreq / 1000.0F);
                         Cursor cursor = getContentResolver().query(FMUtil.CONTENT_URI, FMUtil.PROJECTION, "CH_Freq=" + sFreq, null, null);
@@ -679,43 +658,40 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                                     updatePresetSwitcher(id + 1);
                                     lastPosition = id;
                                     updateListView();
-                                    strPreset = FMUtil.getPresetStr(getContentResolver(), mCurFreq, lastPosition, isLandscape);
-                                    sendCMDtoService(PRESET_CHANGED, PRESET, strPreset);
+                                    signalPresetChanged(lastPosition);
                                 }
                                 cursor.moveToNext();
                             }
                             cursor.close();
                         }
                     }
-                    if (mRdsStatus == 5 || mRdsStatus == 4 || mRdsStatus == 7) {
-                        String rds_full_text = "";
-                        Log.d(TAG, "make RT marquee");
-                        if (mRdsTextID.length() > 0) {
-                            Log.d(TAG, "add the station name");
-                            rds_full_text = mRdsTextID;
+                    String rds_full_text = "";
+                    Log.d(TAG, "make RT marquee");
+                    if (mRdsTextID.length() > 0) {
+                        Log.d(TAG, "add the station name");
+                        rds_full_text = mRdsTextID;
+                    }
+                    if (mRdsTextDisplay.length() > 0) {
+                        Log.d(TAG, "add the RT text");
+                        if (rds_full_text.length() > 0) {
+                            rds_full_text += rds_text_separator;
                         }
-                        if (mRdsTextDisplay.length() > 0) {
-                            Log.d(TAG, "add the RT text");
+                        rds_full_text += mRdsTextDisplay;
+                    }
+                    if (mRdsValuePTY >= 0 && mRdsValuePTY < PTY_STRINGS.length) {
+                        String rds_pty = getString(PTY_STRINGS[mRdsValuePTY]);
+                        if (rds_pty.length() > 0) {
+                            Log.d(TAG, "add the program type");
                             if (rds_full_text.length() > 0) {
                                 rds_full_text += rds_text_separator;
                             }
-                            rds_full_text += mRdsTextDisplay;
+                            rds_full_text += rds_pty;
                         }
-                        if (mRdsValuePTY >= 0 && mRdsValuePTY < PTY_STRINGS.length) {
-                            String rds_pty = getString(PTY_STRINGS[mRdsValuePTY]);
-                            if (rds_pty.length() > 0) {
-                                Log.d(TAG, "add the program type");
-                                if (rds_full_text.length() > 0) {
-                                    rds_full_text += rds_text_separator;
-                                }
-                                rds_full_text += rds_pty;
-                            }
-                        } else {
-                            Log.d(TAG, "mRdsValuePTY is " + mRdsValuePTY + " which is incorrect!!!!!!!!!!!!!!!!");
-                        }
-                        mRdsMarqueeText.setText(rds_full_text);
-                        displayRdsScrollByCurFreq(true);
+                    } else {
+                        Log.d(TAG, "mRdsValuePTY is " + mRdsValuePTY + " which is incorrect!!!!!!!!!!!!!!!!");
                     }
+                    mRdsMarqueeText.setText(rds_full_text);
+                    displayRdsScrollByCurFreq(true);
                     break;
                 case FM_FREQ_ADD:
                     if (mbIsLongPressed) {
@@ -801,14 +777,22 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     private boolean bindToService() {
         Log.d(TAG, "Start to bind to FMRadio service");
-        startService(new Intent(this, FMRadioPlayerService.class));
-        return bindService(new Intent(this, FMRadioPlayerService.class), mServConnection, 0);
+        boolean isLandscape = getResources().getConfiguration().orientation == 2;
+        String strPreset = FMUtil.getPresetStr(getContentResolver(), Integer.valueOf(mCurFreq), lastPosition, isLandscape);
+        Intent i = new Intent(this, FMRadioPlayerService.class);
+        if (strPreset != null) {
+            i.putExtra(PRESET, strPreset);
+        }
+        startService(i);
+        return bindService(i, mServConnection, 0);
     }
 
-    private void cleanUIAndService() {
-        mAudioMgr.setMode(0);
-        unbindFMRadioService();
-        sendCMDtoService(SERVICE_STOP, null, null);
+    private void unbindFMRadioService() {
+        if (mIsBound) {
+            unbindService(mServConnection);
+            mIsBound = false;
+        }
+        stopService(new Intent(this, FMRadioPlayerService.class));
     }
 
     private void clearPresetSwitcher() {
@@ -1206,7 +1190,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     mHandler.sendEmptyMessage(FM_HW_ERROR_FRQ);
                 } else if (action.equals(FMRadioPlayerService.FM_RDS_DATA_AVAILABLE)) {
                     mRDSFreq = intent.getIntExtra("freq", 0);
-                    mRdsStatus = intent.getIntExtra("rds_status", 0);
                     mRdsTextID = intent.getStringExtra("rds_text_id");
                     mRdsTextDisplay = intent.getStringExtra("rds_text_display");
                     mRdsTextDisplay = mRdsTextDisplay.replaceAll("\n", " ");
@@ -1302,14 +1285,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         }
     }
 
-    private void sendCMDtoService(String cmd, String key, String value) {
-        Intent intent = new Intent(cmd);
-        if (key != null && value != null) {
-            intent.putExtra(key, value);
-        }
-        sendBroadcast(intent);
-    }
-
     private void setFMRadioFrequency() {
         Log.d(TAG, "setFMRadioFrequency");
         displayRdsScrollText(false);
@@ -1353,13 +1328,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         mPowerWaitingTS = Toast.makeText(this, id, Toast.LENGTH_LONG);
         mPowerWaitingTS.setGravity(Gravity.CENTER, 0, 0);
         mPowerWaitingTS.show();
-    }
-
-    private void unbindFMRadioService() {
-        if (mIsBound) {
-            unbindService(mServConnection);
-            mIsBound = false;
-        }
     }
 
     private void updateDisplayPanel(int currentFreq, boolean isEditEnable) {
@@ -1591,11 +1559,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 }
                 break;
             case EDIT_CODE:
-                if (resultCode == -1) {
-                    if (data == null || data.getStringExtra("edit_freq") == null) {
-                        return;
-                    }
-                    Log.d(TAG, "Edit back to FMRadioMain UI");
+                if (resultCode == RESULT_OK) {
                     isEdit = true;
                     isPerformClick = false;
                     updateListView();
@@ -1685,9 +1649,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 playClickPreset(LvChannel, pos);
                 break;
             case EDIT_MENU_ID:
-                Intent intent_edit = new Intent(this, FMEditChannel.class);
-                intent_edit.putExtra("current_num", pos);
-                startActivityForResult(intent_edit, 1);
+                editChannel(pos);
                 break;
             case REPLACE_MENU_ID:
                 boolean hasRds = mRdsAvailable && mRdsTextID.length() > 0;
@@ -1888,20 +1850,8 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
             return;
         }
 
-        if (mService != null) {
-            try {
-                mService.setBGMode(!isExitFromUI);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.getMessage());
-            }
-        }
-
         ignoreRdsEvent(false);
-        if (isExitFromUI) {
-            cleanUIAndService();
-        } else {
-            unbindFMRadioService();
-        }
+        unbindFMRadioService();
         mbIsFMStart = false;
         mService = null;
         mPowerWaitingTS = null;
@@ -2026,9 +1976,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 break;
             case EDIT_ID:
                 tempPosition = lastPosition;
-                Intent intent_edit = new Intent(this, FMEditChannel.class);
-                intent_edit.putExtra("current_num", lastPosition);
-                startActivityForResult(intent_edit, 1);
+                editChannel(lastPosition);
                 break;
             case CLEAR_ID:
                 Intent clearIntent = new Intent(this, FMClearChannel.class);
@@ -2241,11 +2189,25 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         getContentResolver().update(FMUtil.CONTENT_URI, cv, "ID=" + id, null);
     }
 
+    private void signalPresetChanged(int preset) {
+        Intent intent = new Intent(PRESET_CHANGED);
+        if (preset >= 0) {
+            intent.putExtra(PRESET, preset);
+        }
+        sendBroadcast(intent);
+    }
+
     private void saveChannel(int position) {
         Intent saveIntent = new Intent(this, FMSaveChannel.class);
         saveIntent.putExtra(FMSaveChannel.EXTRA_FREQUENCY, mCurFreq);
         saveIntent.putExtra(FMSaveChannel.EXTRA_PRESET_ID, position);
         saveIntent.putExtra(FMSaveChannel.EXTRA_RDS_NAME, mRdsTextID);
         startActivityForResult(saveIntent, SAVE_CODE);
+    }
+
+    private void editChannel(int position) {
+        Intent editIntent = new Intent(this, FMEditChannel.class);
+        editIntent.putExtra(FMEditChannel.EXTRA_PRESET, position);
+        startActivityForResult(editIntent, EDIT_CODE);
     }
 }

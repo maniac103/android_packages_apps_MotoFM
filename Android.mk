@@ -7,7 +7,7 @@ LOCAL_SRC_FILES := $(call all-subdir-java-files) \
 	src/com/motorola/android/fmradio/IFMRadioServiceCallback.aidl \
 	src/com/motorola/fmradio/IFMRadioPlayerService.aidl \
 
-LOCAL_PACKAGE_NAME := FMRadio2
+LOCAL_PACKAGE_NAME := FMRadio
 
 LOCAL_CERTIFICATE := platform
 

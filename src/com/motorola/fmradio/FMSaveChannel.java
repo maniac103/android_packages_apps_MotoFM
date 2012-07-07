@@ -21,7 +21,6 @@ import android.widget.Spinner;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 public class FMSaveChannel extends Activity implements View.OnClickListener {
@@ -46,16 +45,21 @@ public class FMSaveChannel extends Activity implements View.OnClickListener {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.save_ch);
-        initResource();
-    }
 
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        Log.d(TAG, "onConfigurationChanged() For save channel activity  called");
-        super.onConfigurationChanged(newConfig);
         setContentView(R.layout.save_ch);
-        initResource();
+        setTitle(R.string.save_as_preset);
+
+        mSaveButton = (Button) findViewById(R.id.btn_save);
+        mSaveButton.setOnClickListener(this);
+        mDiscardButton = (Button) findViewById(R.id.btn_discard);
+        mDiscardButton.setOnClickListener(this);
+
+        mFrequencyField = (TextView) findViewById(R.id.save_frequency);
+        mPresetSpinner = (Spinner) findViewById(R.id.ch_spinner);
+        mNameField = (EditText) findViewById(R.id.ch_name_edit);
+
+        initNameFilter();
+        initData();
     }
 
     @Override
@@ -114,18 +118,7 @@ public class FMSaveChannel extends Activity implements View.OnClickListener {
         return true;
     }
 
-    private void initResource() {
-        setTitle(R.string.save_as_preset);
-
-        mSaveButton = (Button) findViewById(R.id.btn_save);
-        mSaveButton.setOnClickListener(this);
-        mDiscardButton = (Button) findViewById(R.id.btn_discard);
-        mDiscardButton.setOnClickListener(this);
-
-        mFrequencyField = (TextView) findViewById(R.id.save_frequency);
-        mPresetSpinner = (Spinner) findViewById(R.id.ch_spinner);
-        mNameField = (EditText) findViewById(R.id.ch_name_edit);
-
+    private void initNameFilter() {
         InputFilter[] oldFilter = mNameField.getFilters();
         int oldLen = oldFilter.length;
         InputFilter[] newFilter = new InputFilter[oldLen + 1];
@@ -133,16 +126,16 @@ public class FMSaveChannel extends Activity implements View.OnClickListener {
         System.arraycopy(newFilter, 0, oldFilter, 0, oldLen);
         newFilter[oldLen] = new LengthFilter(40);
         mNameField.setFilters(newFilter);
+    }
 
+    private void initData() {
         Intent intent = getIntent();
         int frequency = intent.getIntExtra(EXTRA_FREQUENCY, FMUtil.MIN_FREQUENCY);
         int preset = intent.getIntExtra(EXTRA_PRESET_ID, 0);
         mRdsInfo = intent.getStringExtra(EXTRA_RDS_NAME);
 
         mFrequency = (float) frequency / 1000.0F;
-
-        DecimalFormat formatter = new DecimalFormat(".0");
-        String freqString = formatter.format(mFrequency) + getString(R.string.mhz);
+        final String freqString = FMUtil.formatFrequency(this, mFrequency);
         mFrequencyField.setText(freqString);
 
         if (!TextUtils.isEmpty(mRdsInfo)) {
@@ -153,16 +146,16 @@ public class FMSaveChannel extends Activity implements View.OnClickListener {
 
         Cursor cursor = getContentResolver().query(FMUtil.CONTENT_URI, FMUtil.PROJECTION, null, null, null);
         if (cursor != null) {
-            cursor.moveToFirst();
-
             ArrayList<String> results = new ArrayList<String>();
             int i = 1;
 
+            cursor.moveToFirst();
             while (!cursor.isAfterLast()) {
                 results.add(FMUtil.getPresetUiString(this, cursor, i));
                 cursor.moveToNext();
                 i++;
             }
+            cursor.close();
 
             ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_spinner_item, results);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);

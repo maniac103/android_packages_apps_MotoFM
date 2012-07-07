@@ -12,7 +12,7 @@
             android:choiceMode="multipleChoice"
             android:layout_weight="1.0" />
     <Button
-            android:id="@id/btn_done"
+            android:id="@+id/btn_done"
             android:layout_gravity="bottom|center"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
