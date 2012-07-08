@@ -67,10 +67,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 {
     private static final String TAG = "FMRadioMain";
 
-    public static final String PRESET_CHANGED = "com.motorola.fmradio.preset.changed";
-
-    public static final String PRESET = "preset";
-
     private static int LIGHT_ON_TIME = 90000;
     private static int PRESET_NUM = 20;
 
@@ -356,7 +352,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     ignoreRdsEvent(false);
                     mTuneSucceed = true;
                     updateDisplayPanel(mCurFreq, updatePresetSwitcher());
-                    signalPresetChanged();
                     Log.d(TAG, "FM Tune succeed callback");
                     break;
                 case FM_SEEK_FAILED:
@@ -429,7 +424,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                         updateDisplayPanel(mCurFreq, updatePresetSwitcher());
                         displayRdsScrollByCurFreq(false);
                         enableUI(true);
-                        signalPresetChanged();
                         ScanStopThread sThread = new ScanStopThread();
                         mHandler.postDelayed(sThread, SCAN_STOP_DELAY);
                     }
@@ -465,7 +459,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                             lastIcon.setVisibility(View.INVISIBLE);
                         }
                         setSelectedPreset(-1);
-                        signalPresetChanged();
                         count_save = 0;
                         isScanAll = false;
                     }
@@ -489,7 +482,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                         Toast ts = Toast.makeText(FMRadioMain.this, sb.toString(), Toast.LENGTH_SHORT);
                         ts.setGravity(Gravity.CENTER, 0, 0);
                         ts.show();
-                        signalPresetChanged();
                         if (lastIcon != null) {
                             lastIcon.setVisibility(View.INVISIBLE);
                         }
@@ -557,7 +549,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                                     saveStationToDB(id, mCurFreq, null, mRdsStationName);
                                     updateDisplayPanel(mCurFreq, true);
                                     updatePresetSwitcher(id + 1);
-                                    signalPresetChanged();
                                 }
                                 cursor.moveToNext();
                             }
@@ -626,7 +617,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private boolean bindToService() {
         Log.d(TAG, "Start to bind to FMRadio service");
         Intent i = new Intent(this, FMRadioPlayerService.class);
-        i.putExtra(PRESET, getSelectedPreset());
         startService(i);
         return bindService(i, mServConnection, 0);
     }
@@ -1735,15 +1725,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
             return -1;
         }
         return (int) mChannelList.getItemIdAtPosition(checked);
-    }
-
-    private void signalPresetChanged() {
-        Intent intent = new Intent(PRESET_CHANGED);
-        int preset = getSelectedPreset();
-        if (preset >= 0) {
-            intent.putExtra(PRESET, preset);
-        }
-        sendBroadcast(intent);
     }
 
     private void saveChannel(int position) {
