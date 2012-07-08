@@ -20,6 +20,9 @@ import android.widget.Button;
 import android.widget.CheckedTextView;
 import android.widget.ListView;
 import android.widget.ArrayAdapter;
+
+import com.motorola.fmradio.FMDataProvider.Channels;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -65,7 +68,7 @@ public class FMClearChannel extends ListActivity implements View.OnClickListener
             }
         });
 
-        Cursor cursor = getContentResolver().query(FMUtil.CONTENT_URI, FMUtil.PROJECTION, null, null, null);
+        Cursor cursor = getContentResolver().query(Channels.CONTENT_URI, FMUtil.PROJECTION, null, null, null);
         ArrayList<String> items = new ArrayList<String>();
         items.add(getString(R.string.all_presets));
 
@@ -129,14 +132,15 @@ public class FMClearChannel extends ListActivity implements View.OnClickListener
         SparseBooleanArray checked = mListView.getCheckedItemPositions();
         int count = 0;
 
+        ContentValues cv = new ContentValues();
+        cv.put(Channels.FREQUENCY, 0);
+        cv.put(Channels.NAME, "");
+
         for (int i = 0; i < mCount; i++) {
             if (checked.get(i + 1)) {
+                final Uri uri = Uri.withAppendedPath(Channels.CONTENT_URI, String.valueOf(i));
+                getContentResolver().update(uri, cv, null, null);
                 count++;
-                ContentValues cv = new ContentValues();
-                cv.put("ID", i);
-                cv.put("CH_Freq", "");
-                cv.put("CH_Name", "");
-                getContentResolver().update(FMUtil.CONTENT_URI, cv, "ID=" + i, null);
             }
         }
 

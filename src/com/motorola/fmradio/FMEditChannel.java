@@ -19,6 +19,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.motorola.fmradio.FMDataProvider.Channels;
+
 public class FMEditChannel extends Activity implements View.OnClickListener {
     private static final String TAG = "FMEditChannel";
 
@@ -33,9 +35,7 @@ public class FMEditChannel extends Activity implements View.OnClickListener {
     private Button mDiscardButton;
     private Button mSaveButton;
 
-    private int mPreset;
-    private float mFrequency;
-    private String mRdsInfo;
+    private Uri mUri;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -102,28 +102,30 @@ public class FMEditChannel extends Activity implements View.OnClickListener {
     }
 
     private void initData() {
-        mPreset = getIntent().getIntExtra(EXTRA_PRESET, 0);
-        mPresetField.setText(getString(R.string.preset) + " " + (mPreset + 1));
+        int preset = getIntent().getIntExtra(EXTRA_PRESET, 0);
 
-        Cursor cursor = getContentResolver().query(FMUtil.CONTENT_URI, FMUtil.PROJECTION, "ID=" + mPreset, null, null);
+        mUri = Uri.withAppendedPath(Channels.CONTENT_URI, String.valueOf(preset));
+        mPresetField.setText(getString(R.string.preset) + " " + (preset + 1));
+
+        Cursor cursor = getContentResolver().query(mUri, FMUtil.PROJECTION, null, null, null);
         if (cursor != null) {
             cursor.moveToFirst();
 
-            mFrequency = cursor.getFloat(FMUtil.FM_RADIO_INDEX_CHFREQ);
-            if (mFrequency == 0) {
-                mFrequency = (float) FMUtil.MIN_FREQUENCY / 1000.0F;
+            int frequency = cursor.getInt(FMUtil.CHANNEL_COLUMN_FREQ);
+            if (frequency == 0) {
+                frequency = FMUtil.MIN_FREQUENCY;
             }
 
-            final String freqString = FMUtil.formatFrequency(this, mFrequency);
+            final String freqString = FMUtil.formatFrequency(this, frequency);
             mFrequencyField.setText(freqString);
 
-            String name = cursor.getString(FMUtil.FM_RADIO_INDEX_CHNAME);
-            mRdsInfo = cursor.getString(FMUtil.FM_RADIO_INDEX_CHRDSNAME);
+            String name = cursor.getString(FMUtil.CHANNEL_COLUMN_NAME);
+            String rdsInfo = cursor.getString(FMUtil.CHANNEL_COLUMN_RDSNAME);
 
             if (!TextUtils.isEmpty(name)) {
                 mNameField.setText(name);
-            } else if (!TextUtils.isEmpty(mRdsInfo)) {
-                mNameField.setText(mRdsInfo);
+            } else if (!TextUtils.isEmpty(rdsInfo)) {
+                mNameField.setText(rdsInfo);
             } else {
                 mNameField.setText(freqString);
             }
@@ -135,12 +137,9 @@ public class FMEditChannel extends Activity implements View.OnClickListener {
     private void doSave() {
         ContentValues cv = new ContentValues();
 
-        cv.put("ID", mPreset);
-        cv.put("CH_Freq", mFrequency);
-        cv.put("CH_Name", mNameField.getText().toString());
-        cv.put("CH_RdsName", mRdsInfo);
+        cv.put(Channels.NAME, mNameField.getText().toString());
 
-        getContentResolver().update(FMUtil.CONTENT_URI, cv, "ID=" + mPreset, null);
+        getContentResolver().update(mUri, cv, null, null);
 
         setResult(RESULT_OK);
         finish();

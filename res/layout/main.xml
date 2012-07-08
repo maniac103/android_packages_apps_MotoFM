@@ -155,5 +155,14 @@
             android:background="@drawable/fm_background_list"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1.0" />
+            android:layout_weight="1.0">
+        <ListView
+                android:id="@+id/channel_list"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:cacheColorHint="#00000000"
+                android:choiceMode="singleChoice"
+                android:fadingEdge="vertical"
+                android:fadingEdgeLength="50px" />
+    </LinearLayout>
 </LinearLayout>

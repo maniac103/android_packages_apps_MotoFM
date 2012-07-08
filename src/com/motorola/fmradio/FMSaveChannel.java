@@ -21,6 +21,8 @@ import android.widget.Spinner;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import com.motorola.fmradio.FMDataProvider.Channels;
+
 import java.util.ArrayList;
 
 public class FMSaveChannel extends Activity implements View.OnClickListener {
@@ -39,7 +41,7 @@ public class FMSaveChannel extends Activity implements View.OnClickListener {
     private Button mSaveButton;
     private Spinner mPresetSpinner;
 
-    private float mFrequency;
+    private int mFrequency;
     private String mRdsInfo;
 
     @Override
@@ -108,11 +110,11 @@ public class FMSaveChannel extends Activity implements View.OnClickListener {
 
     private void initData() {
         Intent intent = getIntent();
-        int frequency = intent.getIntExtra(EXTRA_FREQUENCY, FMUtil.MIN_FREQUENCY);
         int preset = intent.getIntExtra(EXTRA_PRESET_ID, 0);
+
+        mFrequency = intent.getIntExtra(EXTRA_FREQUENCY, FMUtil.MIN_FREQUENCY);
         mRdsInfo = intent.getStringExtra(EXTRA_RDS_NAME);
 
-        mFrequency = (float) frequency / 1000.0F;
         final String freqString = FMUtil.formatFrequency(this, mFrequency);
         mFrequencyField.setText(freqString);
 
@@ -122,7 +124,7 @@ public class FMSaveChannel extends Activity implements View.OnClickListener {
             mNameField.setText(freqString);
         }
 
-        Cursor cursor = getContentResolver().query(FMUtil.CONTENT_URI, FMUtil.PROJECTION, null, null, null);
+        Cursor cursor = getContentResolver().query(Channels.CONTENT_URI, FMUtil.PROJECTION, null, null, null);
         if (cursor != null) {
             ArrayList<String> results = new ArrayList<String>();
             int i = 1;
@@ -147,12 +149,12 @@ public class FMSaveChannel extends Activity implements View.OnClickListener {
     private void doSave() {
         ContentValues cv = new ContentValues();
         int id = mPresetSpinner.getSelectedItemPosition();
+        final Uri uri = Uri.withAppendedPath(Channels.CONTENT_URI, String.valueOf(id));
 
-        cv.put("CH_Freq", mFrequency);
-        cv.put("CH_Name", mNameField.getText().toString());
-        cv.put("CH_RdsName", TextUtils.isEmpty(mRdsInfo) ? "" : mRdsInfo);
+        cv.put(Channels.FREQUENCY, mFrequency);
+        cv.put(Channels.NAME, mNameField.getText().toString());
 
-        getContentResolver().update(FMUtil.CONTENT_URI, cv, "ID=" + id, null);
+        getContentResolver().update(uri, cv, null, null);
 
         Intent result = new Intent();
         result.putExtra(EXTRA_PRESET_ID, id);

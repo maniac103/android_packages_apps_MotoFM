@@ -12,6 +12,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.media.AudioManager;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -82,20 +83,9 @@ public class FMRadioPlayerService extends Service {
     public static final int SERVICE_READY = 2;
     public static final int SERVICE_STANDBY = 3;
 
-    private static final int CLOSE_SERVICE = 1;
-    private static final int HEADSET_PLUG_STATE_CHANGED_MSG = 2;
-    private static final int AUDIO_PATH_FREE = 3;
-    private static final int AUDIO_PATH_BUSY = 4;
-    private static final int ACTION_AIRPLANE_MODE_CHANGED_MSG = 5;
-    private static final int ACTION_POWERON_FMBT = 6;
-    private static final int ACTION_POWEROFF_FMBT = 7;
-    private static final int ACTION_INIT_FIRMWARE = 8;
-    private static final int ACTION_SET_BAND = 9;
-    private static final int ACTION_DEINIT_FIRMWARE = 11;
-    private static final int ACTION_TUNE_CHANNEL = 12;
-    private static final int ACTION_SEEK_CHANNEL = 13;
-    private static final int ACTION_SET_VOLUME = 14;
-    private static final int MUSIC_PLAYSTATE_CHANGED = 18;
+    private static final int MSG_TUNE_CHANNEL = 1;
+    private static final int MSG_SEEK_CHANNEL = 2;
+    private static final int MSG_SET_VOLUME = 3;
 
     private IFMRadioService mIFMRadioService = null;
     private FMServiceStateBase mServiceState = null;
@@ -104,16 +94,15 @@ public class FMRadioPlayerService extends Service {
     private Notification mNotification;
     private PendingIntent mActivityIntent;
 
-    private boolean isInitial = true;
     private boolean mIgnoreRdsEvent = false;
-    private boolean mIsHeadsetPlugged = true;
+    private int mHeadsetState = -1;
     private boolean mTuneFirst = false;
     private boolean misPowerOn = false;
+    private boolean mBound = false;
 
     private int mAudioMode = 0;
     private int mAudioRouting = AudioManager_ROUTE_FM_HEADSET;
     private int mCurFreq = FMUtil.MIN_FREQUENCY;
-    protected int mHeadset = -1;
     private String mRdsTextDisplay = "";
     private String mRdsTextID = "";
     private int mRdsValuePTY = 0;
@@ -211,12 +200,12 @@ public class FMRadioPlayerService extends Service {
 
         @Override
         protected boolean powerOn(int freq) {
-            boolean ret = false;
             Log.d(TAG, "FMStateUNInit:powerOn(): Power on fmradio device");
-            if (!misPowerOn) {
-                ret = bindService(new Intent("com.motorola.android.fmradio.FMRADIO_SERVICE"), mConnection, 1);
+            if (misPowerOn) {
+                return false;
             }
-            return ret;
+            mBound = bindService(new Intent("com.motorola.android.fmradio.FMRADIO_SERVICE"), mConnection, 1);
+            return mBound;
         }
     }
 
@@ -235,7 +224,10 @@ public class FMRadioPlayerService extends Service {
         @Override
         protected boolean powerOff() {
             Log.d(TAG, "FMStateInitED:close(), close fmradio server stack first");
-            unbindService(mConnection);
+            if (mBound) {
+                unbindService(mConnection);
+                mBound = false;
+            }
             return true;
         }
 
@@ -274,7 +266,10 @@ public class FMRadioPlayerService extends Service {
         protected boolean powerOff() {
             Log.d(TAG, "FMStateReady:close(), close fmradio server stack first");
             am.setMode(AudioManager.MODE_NORMAL);
-            unbindService(mConnection);
+            if (mBound) {
+                unbindService(mConnection);
+                mBound = false;
+            }
             return true;
         }
 
@@ -297,7 +292,7 @@ public class FMRadioPlayerService extends Service {
         @Override
         protected boolean seek(int freq, int direction) {
             Log.d(TAG, "FMStateReady:seek(), seek start = " + freq + ", seek direction = " + direction);
-            Message msg = Message.obtain(mHandler, ACTION_SEEK_CHANNEL, Integer.valueOf(direction));
+            Message msg = Message.obtain(mHandler, MSG_SEEK_CHANNEL, Integer.valueOf(direction));
             mHandler.sendMessage(msg);
             return true;
         }
@@ -381,7 +376,7 @@ public class FMRadioPlayerService extends Service {
             switch (cmd) {
                 case 0:
                     mCurFreq = Integer.parseInt(value);
-                    Log.w(TAG, "OnCommandCompleteListener : FM_CMD_TUNE_COMPLETE = " + status);
+                    Log.w(TAG, "OnCommandCompleteListener : FM_CMD_TUNE_COMPLETE = " + status + " frequency " + value);
                     if (status == 0) {
                         notifyCmdResults(FM_HW_ERROR_FRQ, null);
                     } else if (mTuneFirst) {
@@ -404,6 +399,7 @@ public class FMRadioPlayerService extends Service {
                             } catch (RemoteException e) {
                                 Log.e(TAG, "setVolume Failed: " + e.getMessage());
                             }
+                            updateStateIndicators(-1);
                         } else {
                             Log.w(TAG, "Need to re-tune to last remembered value.");
                             try {
@@ -689,80 +685,7 @@ public class FMRadioPlayerService extends Service {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case HEADSET_PLUG_STATE_CHANGED_MSG:
-                    Log.v(TAG, "handleMessage headset plug begin");
-                    mHeadset = msg.arg1;
-                    Log.v(TAG, "mHeadset = " + mHeadset);
-                    mIsHeadsetPlugged = (mHeadset == STEREO_HEADSET || mHeadset == STEREO_HEADSET2 || mHeadset == OMTP_HEADSET);
-                    Log.v(TAG, "mIsHeadsetPlugged = " + mIsHeadsetPlugged);
-                    if (mIsHeadsetPlugged) {
-                        if (isMusicPlaying()) {
-                            Intent i = new Intent(ACTION_MUSIC_SERVICE_COMMAND);
-                            i.putExtra(MUSIC_COMMAND, MUSIC_PAUSE);
-                            sendBroadcast(i);
-                        }
-                        isInitial = false;
-                        Log.w(TAG, "Headset is pluged in!");
-                    } else {
-                        if (isInitial) {
-                            isInitial = false;
-                            showNoticeDialog(R.string.fmradio_no_headset_at_begin);
-                        } else {
-                            Log.w(TAG, "Headset is pluged out while listening!");
-                            showNoticeDialog(R.string.fmradio_no_headset_in_listen);
-                        }
-                        notifyCmdResults(FM_QUIT, null);
-                    }
-                    break;
-                case AUDIO_PATH_FREE:
-                    Log.d(TAG, "Serv-mHandler: AUDIO_PATH_FREE");
-                    setFMMuteState(true);
-                    break;
-                case AUDIO_PATH_BUSY:
-                    Log.d(TAG, "Serv-mHandler: AUDIO_PATH_BUSY");
-                    setFMMuteState(true);
-                    break;
-                case ACTION_AIRPLANE_MODE_CHANGED_MSG:
-                    Log.d(TAG, "Send message to UI for airplane mode is true");
-                    showNoticeDialog(R.string.fmradio_airplane_mode_enable_in_listen);
-                    notifyCmdResults(FM_QUIT, null);
-                    break;
-                case ACTION_POWERON_FMBT:
-                    Log.d(TAG, "Serv-mHandler: ACTION_POWERON_FMBT");
-                    if (!misPowerOn) {
-                        bindService(new Intent("com.motorola.android.fmradio.FMRADIO_SERVICE"), mConnection, 1);
-                    }
-                    break;
-                case ACTION_POWEROFF_FMBT:
-                    Log.d(TAG, "Serv-mHandler: ACTION_POWEROFF_FMBT");
-                    am.setMode(AudioManager.MODE_NORMAL);
-                    unbindService(mConnection);
-                    break;
-                case ACTION_INIT_FIRMWARE:
-                    Log.d(TAG, "Serv-mHandler: ACTION_INIT_FIRMWARE");
-                    if (!misPowerOn) {
-                        bindService(new Intent("com.motorola.android.fmradio.FMRADIO_SERVICE"), mConnection, 1);
-                    }
-                    break;
-                case ACTION_SET_BAND:
-                    Log.d(TAG, "Serv-mHandler: ACTION_SET_BAND");
-                    if (mIsHeadsetPlugged) {
-                        audioPrepare(AudioManager_ROUTE_FM_HEADSET);
-                    } else {
-                        audioPrepare(AudioManager_ROUTE_FM_SPEAKER);
-                    }
-                    try {
-                        mIFMRadioService.setBand((Integer) msg.obj);
-                    } catch (RemoteException e) {
-                        Log.e(TAG, "setBand Failed: " + e.getMessage());
-                    }
-                    break;
-                case ACTION_DEINIT_FIRMWARE:
-                    Log.d(TAG, "Serv-mHandler: ACTION_DEINIT_FIRMWARE");
-                    am.setMode(AudioManager.MODE_NORMAL);
-                    unbindService(mConnection);
-                    break;
-                case ACTION_TUNE_CHANNEL:
+                case MSG_TUNE_CHANNEL:
                     Log.d(TAG, "Serv-mHandler: ACTION_TUNE_CHANNEL");
                     try {
                         mIFMRadioService.tune((Integer) msg.obj);
@@ -771,7 +694,7 @@ public class FMRadioPlayerService extends Service {
                         notifyCmdResults(FM_HW_ERROR_FRQ, null);
                     }
                     break;
-                case ACTION_SEEK_CHANNEL:
+                case MSG_SEEK_CHANNEL:
                     Log.d(TAG, "Serv-mHandler: ACTION_SEEK_CHANNEL");
                     try {
                         mIFMRadioService.seek((Integer) msg.obj);
@@ -780,18 +703,12 @@ public class FMRadioPlayerService extends Service {
                         notifyCmdResults(FM_SEEK_FAILED, null);
                     }
                     break;
-                case ACTION_SET_VOLUME:
+                case MSG_SET_VOLUME:
                     Log.d(TAG, "Serv-mHandler: ACTION_SET_VOLUME to " + msg.arg1);
                     try {
                         mIFMRadioService.setVolume(msg.arg1);
                     } catch (RemoteException e) {
                         Log.e(TAG, "setVolume Failed: " + e.getMessage());
-                    }
-                    break;
-                case MUSIC_PLAYSTATE_CHANGED:
-                    if (isMusicPlaying()) {
-                        showNoticeDialog(R.string.fmradio_music_playing_in_listen);
-                        notifyCmdResults(FM_QUIT, null);
                     }
                     break;
             }
@@ -845,23 +762,25 @@ public class FMRadioPlayerService extends Service {
                 if (action.equals(Intent.ACTION_HEADSET_PLUG)) {
                     int state = intent.getIntExtra("state", 0);
                     Log.d(TAG, "HEADSET is pluged in/out.");
-                    Message message = Message.obtain(mHandler, HEADSET_PLUG_STATE_CHANGED_MSG, state, 0);
-                    mHandler.sendMessage(message);
+                    handleHeadsetChange(state);
                 } else if (action.equals(Intent.ACTION_AIRPLANE_MODE_CHANGED)) {
                     int state = intent.getIntExtra("state", 0);
-                    Log.d(TAG, "Aireplane mode changed." + state);
+                    Log.v(TAG, "Got airplane mode change message, new state " + state);
                     if (state != 0) {
-                        Log.d("FMRadioService", "Aireplane mode is enabled.");
-                        mHandler.sendEmptyMessage(ACTION_AIRPLANE_MODE_CHANGED_MSG);
+                        showNoticeDialog(R.string.fmradio_airplane_mode_enable_in_listen);
+                        notifyCmdResults(FM_QUIT, null);
                     }
                 } else if (action.equals(ACTION_AUDIOPATH_FREE)) {
-                    Log.d(TAG, "Audio Path is availabel." + intent.getIntExtra("state", 0));
-                    mHandler.sendEmptyMessage(AUDIO_PATH_FREE);
+                    Log.v(TAG, "Audio path is available again");
+                    setFMMuteState(false);
                 } else if (action.equals(ACTION_AUDIOPATH_BUSY)) {
-                    Log.d(TAG, "Audio Path is unavailabel." + intent.getIntExtra("state", 0));
-                    mHandler.sendEmptyMessage(AUDIO_PATH_BUSY);
+                    Log.d(TAG, "Audio path is busy");
+                    setFMMuteState(true);
                 } else if (action.equals(ACTION_MUSIC_PLAYSTATE_CHANGED)) {
-                    mHandler.sendEmptyMessage(MUSIC_PLAYSTATE_CHANGED);
+                    if (isMusicPlaying()) {
+                        showNoticeDialog(R.string.fmradio_music_playing_in_listen);
+                        notifyCmdResults(FM_QUIT, null);
+                    }
                 } else if (action.equals(FMRadioMain.PRESET_CHANGED)) {
                     updateStateIndicators(intent.getIntExtra(FMRadioMain.PRESET, -1));
                 } else if (action.equals(ACTION_FMRADIO_COMMAND)) {
@@ -907,30 +826,25 @@ public class FMRadioPlayerService extends Service {
                         int volume = intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, 0);
                         Log.d(TAG, "Received FM volume change intent, setting volume to " + volume);
                         Preferences.setVolume(FMRadioPlayerService.this, volume);
-                        Message msg = Message.obtain(mHandler, ACTION_SET_VOLUME, volume, 0, null);
+                        Message msg = Message.obtain(mHandler, MSG_SET_VOLUME, volume, 0, null);
                         mHandler.sendMessage(msg);
                     }
                 }
             }
         };
 
-        IntentFilter iFilter = new IntentFilter();
-        Log.d(TAG, "register airplane on/off broadcasts");
-        iFilter.addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED);
-        Log.d(TAG, "register headset plug in/out broadcasts");
-        iFilter.addAction(Intent.ACTION_HEADSET_PLUG);
-        iFilter.addAction(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
-        iFilter.addAction(AudioManager.VOLUME_CHANGED_ACTION);
-
-        registerReceiver(mReceiver, iFilter);
-
-        Log.d(TAG, "register the audio path change message");
-        registerReceiver(mReceiver, new IntentFilter(ACTION_AUDIOPATH_FREE));
-        registerReceiver(mReceiver, new IntentFilter(ACTION_AUDIOPATH_BUSY));
-        registerReceiver(mReceiver, new IntentFilter(ACTION_MUSIC_PLAYSTATE_CHANGED));
-        registerReceiver(mReceiver, new IntentFilter(FMRadioMain.PRESET_CHANGED));
-        Log.d(TAG, "register fmradio command");
-        registerReceiver(mReceiver, new IntentFilter(ACTION_FMRADIO_COMMAND));
+        Log.v(TAG, "Registering broadcast receiver");
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+        filter.addAction(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
+        filter.addAction(AudioManager.VOLUME_CHANGED_ACTION);
+        filter.addAction(ACTION_AUDIOPATH_FREE);
+        filter.addAction(ACTION_AUDIOPATH_BUSY);
+        filter.addAction(ACTION_MUSIC_PLAYSTATE_CHANGED);
+        filter.addAction(FMRadioMain.PRESET_CHANGED);
+        filter.addAction(ACTION_FMRADIO_COMMAND);
+        filter.addAction(Intent.ACTION_HEADSET_PLUG);
+        registerReceiver(mReceiver, filter);
     }
 
     private void resetRDSData() {
@@ -965,13 +879,26 @@ public class FMRadioPlayerService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        Log.d(TAG, "onBind() called");
+        Log.d(TAG, "onBind(), current service state " + mServiceState.curServiceState());
+
         if (isAirplaneModeOn()) {
             showNoticeDialog(R.string.fmradio_airplane_mode_enable_at_begin);
             notifyCmdResults(FM_QUIT, null);
-        } else {
+            return null;
+        }
+
+        Intent headsetIntent = registerReceiver(null, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
+        if (headsetIntent != null) {
+            handleHeadsetChange(headsetIntent.getIntExtra("state", 0));
+        }
+
+        if (isHeadsetConnected() && mServiceState.curServiceState() == SERVICE_UNINIT) {
+            Log.v(TAG, "Starting FM radio service");
+            if (!mServiceState.powerOn(Preferences.getLastFrequency(this))) {
+                Log.w(TAG, "Powering on FM radio failed");
+                return null;
+            }
             registerBroadcastListener();
-            Log.w(TAG, "Notice home to show update current preset name on the notice bar. ");
             updateStateIndicators(intent.getIntExtra(FMRadioMain.PRESET, -1));
         }
         return mBinder;
@@ -981,7 +908,6 @@ public class FMRadioPlayerService extends Service {
     public void onCreate() {
         Log.e(TAG, "onCreate() called");
         super.onCreate();
-        isInitial = true;
         am = (AudioManager) getSystemService(AUDIO_SERVICE);
 
         PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
@@ -1016,32 +942,11 @@ public class FMRadioPlayerService extends Service {
         if (mWakeLock.isHeld()) {
             mWakeLock.release();
         }
-        if (mServiceState.curServiceState() == SERVICE_READY) {
+        if (mBound) {
             unbindService(mConnection);
+            mBound = false;
         }
         mTuneFirst = false;
-    }
-
-    @Override
-    public void onRebind(Intent intent) {
-        Log.d(TAG, "onRebind() called");
-        registerBroadcastListener();
-    }
-
-    @Override
-    public void onStart(Intent intent, int startId) {
-        Log.d(TAG, "onStart() called");
-        Log.d(TAG, "mServiceState.curServiceState() = " + mServiceState.curServiceState());
-        if (!isAirplaneModeOn() && mServiceState.curServiceState() == -1) {
-            Log.d(TAG, "Before fm radio power on");
-            boolean ret = mServiceState.powerOn(Preferences.getLastFrequency(this));
-            Log.d(TAG, "After fm radio power on");
-            if (ret) {
-                Log.d(TAG, "fm radio power on request sucessfully, wait for callback");
-            } else {
-                Log.d(TAG, "fm radio power on fail");
-            }
-        }
     }
 
     @Override
@@ -1049,7 +954,7 @@ public class FMRadioPlayerService extends Service {
         Log.d(TAG, "onUnbind() called");
         super.onUnbind(intent);
 
-        if (mServiceState.curServiceState() != 2) {
+        if (mServiceState.curServiceState() != SERVICE_READY) {
             cancelStateIndicators();
             if (mReceiver != null) {
                 Log.d(TAG, "unregister Receiver.");
@@ -1070,16 +975,17 @@ public class FMRadioPlayerService extends Service {
     }
 
     private void updateStateIndicators(int preset) {
-        final String frequencyString = FMUtil.formatFrequency(this, (float) mCurFreq / 1000.0F);
+        final String frequencyString = FMUtil.formatFrequency(this, mCurFreq);
         String title = null, text = null;
 
         if (preset >= 0) {
-            Cursor cursor = getContentResolver().query(FMUtil.CONTENT_URI, FMUtil.PROJECTION, "ID=" + preset, null, null);
+            final Uri uri = Uri.withAppendedPath(FMDataProvider.Channels.CONTENT_URI, String.valueOf(preset));
+            Cursor cursor = getContentResolver().query(uri, FMUtil.PROJECTION, null, null, null);
             if (cursor != null) {
                 cursor.moveToFirst();
 
-                String name = cursor.getString(FMUtil.FM_RADIO_INDEX_CHNAME);
-                String rdsName = cursor.getString(FMUtil.FM_RADIO_INDEX_CHRDSNAME);
+                String name = cursor.getString(FMUtil.CHANNEL_COLUMN_NAME);
+                String rdsName = cursor.getString(FMUtil.CHANNEL_COLUMN_RDSNAME);
 
                 text = frequencyString;
                 if (!TextUtils.isEmpty(name)) {
@@ -1125,5 +1031,28 @@ public class FMRadioPlayerService extends Service {
         Intent intent = new Intent("com.android.media.intent.action.FM_STATE_CHANGED");
         intent.putExtra("active", active);
         sendStickyBroadcast(intent);
+    }
+
+    private boolean isHeadsetConnected() {
+        return mHeadsetState == STEREO_HEADSET || mHeadsetState == STEREO_HEADSET2 || mHeadsetState == OMTP_HEADSET;
+    }
+
+    private void handleHeadsetChange(int state) {
+        int oldState = mHeadsetState;
+        mHeadsetState = state;
+        boolean available = isHeadsetConnected();
+
+        Log.v(TAG, "Headset change: state " + state + " -> available " + available);
+        if (available) {
+            if (isMusicPlaying()) {
+                Intent i = new Intent(ACTION_MUSIC_SERVICE_COMMAND);
+                i.putExtra(MUSIC_COMMAND, MUSIC_PAUSE);
+                sendBroadcast(i);
+            }
+        } else {
+            showNoticeDialog(oldState < 0 ?
+                    R.string.fmradio_no_headset_at_begin : R.string.fmradio_no_headset_in_listen);
+            notifyCmdResults(FM_QUIT, null);
+        }
     }
 }

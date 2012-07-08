@@ -1,6 +1,7 @@
 package com.motorola.fmradio;
 
 import android.content.ContentProvider;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.UriMatcher;
@@ -16,33 +17,49 @@ import android.util.Log;
 public class FMDataProvider extends ContentProvider {
     private static final String TAG = "FMDataProvider";
 
-    private static final String DATABASE_NAME = "FM_RadioDB.db";
+    private static final String AUTHORITY = "com.motorola.provider.fmradio";
+    private static final String DATABASE_NAME = "fmradio.db";
     private static final int DATABASE_VERSION = 1;
 
-    private static final String TABLE_NAME = "FM_Radio";
+    private static final String CHANNEL_TABLE = "channels";
+    private static final int CHANNEL_COUNT = 20;
+
+    public static class Channels {
+        public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/channels");
+        public static final String ID = "_id";
+        public static final String FREQUENCY = "frequency";
+        public static final String NAME = "name";
+        public static final String RDS_NAME = "rds_name";
+    };
 
     private static final int CHANNELS = 1;
     private static final int CHANNELS_ID = 2;
 
     private static final UriMatcher sUriMatcher = new UriMatcher(-1);
     static {
-        sUriMatcher.addURI("com.motorola.provider.fmradio", "FM_Radio", CHANNELS);
-        sUriMatcher.addURI("com.motorola.provider.fmradio", "FM_Radio/#", CHANNELS_ID);
+        sUriMatcher.addURI(AUTHORITY, "channels", CHANNELS);
+        sUriMatcher.addURI(AUTHORITY, "channels/#", CHANNELS_ID);
     }
 
     private DatabaseHelper mOpenHelper;
 
     private class DatabaseHelper extends SQLiteOpenHelper {
         DatabaseHelper(Context context) {
-            super(context, TABLE_NAME, null, DATABASE_VERSION);
+            super(context, DATABASE_NAME, null, DATABASE_VERSION);
         }
 
         @Override
         public void onCreate(SQLiteDatabase db) {
             try {
-                db.execSQL("CREATE TABLE FM_Radio (ID INTEGER,CH_Freq FLOAT,CH_Name TEXT,CH_RdsName TEXT);");
-                for (int i = 0; i < 20; i++) {
-                    db.execSQL("insert into FM_Radio (ID, CH_Freq, CH_Name, CH_RdsName) values(\'" + i + "\', \'\', \'\', \'\');");
+                db.execSQL("CREATE TABLE channels (" +
+                        "_id INTEGER PRIMARY KEY," +
+                        "frequency INT NOT NULL DEFAULT 0," +
+                        "name TEXT," +
+                        "rds_name TEXT" +
+                        ");");
+                for (int i = 0; i < CHANNEL_COUNT; i++) {
+                    db.execSQL("insert into channels (_id, frequency, name, rds_name) " +
+                            "values(\'" + i + "\', \'0\', \'\', \'\');");
                 }
             } catch (SQLException e) {
                 Log.e(TAG, e.toString());
@@ -71,10 +88,15 @@ public class FMDataProvider extends ContentProvider {
         SQLiteDatabase db = mOpenHelper.getReadableDatabase();
         switch (sUriMatcher.match(uri)) {
             case CHANNELS:
-            case CHANNELS_ID:
-                Log.d(TAG, "set channel table: FM_Radio");
-                qb.setTables(TABLE_NAME);
+                qb.setTables(CHANNEL_TABLE);
                 break;
+            case CHANNELS_ID: {
+                long id = ContentUris.parseId(uri);
+                qb.setTables(CHANNEL_TABLE);
+                selectionArgs = insertSelectionArg(selectionArgs, String.valueOf(id));
+                qb.appendWhere("_id=?");
+                break;
+            }
             default:
                 throw new IllegalArgumentException("Unknown URI " + uri);
         }
@@ -82,34 +104,13 @@ public class FMDataProvider extends ContentProvider {
         Cursor c = qb.query(db, projection, selection, selectionArgs, null, null, null);
         if (c != null) {
             c.setNotificationUri(getContext().getContentResolver(), uri);
-        } else {
-            Log.d(TAG, "It was not possible to set notification URI to cursor");
         }
         return c;
     }
 
     @Override
     public Uri insert(Uri uri, ContentValues initialValues) {
-        if (initialValues.get("ID") == null
-                || initialValues.get("CH_Freq") == null
-                || initialValues.get("CH_Name") == null
-                || initialValues.get("CH_RdsName") == null) {
-            throw new IllegalArgumentException("Null values when adding to " + uri);
-        }
-        String field_1 = initialValues.get("ID").toString();
-        String field_2 = initialValues.get("CH_Freq").toString();
-        String field_3 = initialValues.get("CH_Name").toString();
-        String field_4 = initialValues.get("CH_RdsName").toString();
-        SQLiteDatabase db = mOpenHelper.getWritableDatabase();
-
-        try {
-            db.execSQL("insert into FM_Radio (ID, CH_Freq, CH_Name, CH_RdsName) values(\'" +
-                    field_1 + "\', \'" + field_2 + "\', \'" + field_3 +
-                    "\', \'" + field_4 + "\')");
-        } catch (SQLiteException e) {
-            Log.e(TAG, e.toString());
-        }
-        return uri;
+        return null;
     }
 
     @Override
@@ -119,21 +120,38 @@ public class FMDataProvider extends ContentProvider {
 
         switch (sUriMatcher.match(uri)) {
             case CHANNELS:
-            case CHANNELS_ID:
-                count = db.update(TABLE_NAME, values, where, whereArgs);
+                count = db.update(CHANNEL_TABLE, values, where, whereArgs);
                 break;
+            case CHANNELS_ID: {
+                long id = ContentUris.parseId(uri);
+                count = db.update(CHANNEL_TABLE, values, "_id=?", new String[] { String.valueOf(id) });
+                break;
+            }
             default:
                 throw new IllegalArgumentException("Unknown URI " + uri);
         }
 
-        getContext().getContentResolver().notifyChange(uri, null);
+
+        if (count > 0) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
         return count;
     }
 
     @Override
     public int delete(Uri uri, String where, String[] whereArgs) {
-        SQLiteDatabase db = mOpenHelper.getWritableDatabase();
-        db.delete(where, whereArgs[0] + "=\'" + whereArgs[1] + "\'", null);
         return 0;
+    }
+
+    private String[] insertSelectionArg(String[] selectionArgs, String arg) {
+        if (selectionArgs == null) {
+            return new String[] {arg};
+        } else {
+            int newLength = selectionArgs.length + 1;
+            String[] newSelectionArgs = new String[newLength];
+            newSelectionArgs[0] = arg;
+            System.arraycopy(selectionArgs, 0, newSelectionArgs, 1, selectionArgs.length);
+            return newSelectionArgs;
+        }
     }
 }

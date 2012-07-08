@@ -114,8 +114,10 @@ public class MarqueeText extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.translate(-mScrollPos, 0);
-        canvas.drawText(mText, getPaddingLeft(), getPaddingTop() - mAscent, mTextPaint);
+        if (mText != null) {
+            canvas.translate(-mScrollPos, 0);
+            canvas.drawText(mText, getPaddingLeft(), getPaddingTop() - mAscent, mTextPaint);
+        }
     }
 
     @Override
