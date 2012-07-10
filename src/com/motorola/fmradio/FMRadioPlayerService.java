@@ -34,21 +34,6 @@ import com.motorola.fmradio.FMDataProvider.Channels;
 public class FMRadioPlayerService extends Service {
     private static final String TAG = "JAVA:FMRadioPlayerService";
 
-    public static final String FM_ABORT_COMPLETE = "com.motorola.fmradio.abortcomplete";
-    public static final String FM_AUDIO_MODE_CHANGED = "com.motorola.fmradio.audiomodechanged";
-    public static final String FM_HW_ERROR_FRQ = "com.motorola.fmradio.freqerror";
-    public static final String FM_HW_ERROR_UNKNOWN = "com.motorola.fmradio.hwerror";
-    public static final String FM_OPEN_FAILED = "com.motorola.fmradio.openfailed";
-    public static final String FM_POWERON_SUCCESS = "com.motorola.fmradio.poweronsuccess";
-    public static final String FM_QUIT = "com.motorola.fmradio.quit";
-    public static final String FM_RDS_DATA_AVAILABLE = "com.motorola.fmradio.rdsdataavailable";
-    public static final String FM_SCANNING = "com.motorola.fmradio.scanning";
-    public static final String FM_SCAN_FAILED = "com.motorola.fmradio.scanfailed";
-    public static final String FM_SCAN_SUCCEED = "com.motorola.fmradio.scansucceed";
-    public static final String FM_SEEK_FAILED = "com.motorola.fmradio.seekfailed";
-    public static final String FM_SEEK_SUCCEED = "com.motorola.fmradio.seeksucceed";
-    public static final String FM_SEEK_SUCCEED_AND_REACHLIMIT = "com.motorola.fmradio.seeklimit";
-    public static final String FM_TUNE_SUCCEED = "com.motorola.fmradio.tunesucceed";
     public static final String ACTION_AUDIOPATH_BUSY = "android.intent.action.AudioPathBusy";
     public static final String ACTION_AUDIOPATH_FREE = "android.intent.action.AudioPathFree";
     private static final String ACTION_FMRADIO_COMMAND = "com.motorola.fmradio.command";
@@ -91,6 +76,7 @@ public class FMRadioPlayerService extends Service {
 
     private IFMRadioService mIFMRadioService = null;
     private FMServiceStateBase mServiceState = null;
+    private IFMRadioPlayerServiceCallbacks mCallbacks = null;
 
     private AudioManager am;
     private Notification mNotification;
@@ -381,10 +367,10 @@ public class FMRadioPlayerService extends Service {
                     mCurFreq = Integer.parseInt(value);
                     Log.w(TAG, "OnCommandCompleteListener : FM_CMD_TUNE_COMPLETE = " + status + " frequency " + value);
                     if (status == 0) {
-                        notifyCmdResults(FM_HW_ERROR_FRQ, null);
+                        notifyTuneResult(false);
                     } else if (mTuneFirst) {
                         updateStateIndicators();
-                        notifyCmdResults(FM_TUNE_SUCCEED, null);
+                        notifyTuneResult(true);
                         Log.w(TAG, "OnCommandCompleteListener : fmradio set frequency succeed!");
                     } else {
                         int savedtune = Preferences.getLastFrequency(FMRadioPlayerService.this);
@@ -395,7 +381,7 @@ public class FMRadioPlayerService extends Service {
                             } catch (RemoteException e) {
                                 Log.e(TAG, "getAudioMode Failed: " + e.getMessage());
                                 mAudioMode = 0;
-                                notifyCmdResults(FM_HW_ERROR_FRQ, null);
+                                notifyTuneResult(false);
                             }
                             try {
                                 int vol = Preferences.getVolume(FMRadioPlayerService.this);
@@ -409,7 +395,7 @@ public class FMRadioPlayerService extends Service {
                             try {
                                 mIFMRadioService.tune(savedtune);
                             } catch (RemoteException e) {
-                                notifyCmdResults(FM_HW_ERROR_FRQ, null);
+                                notifyTuneResult(false);
                             }
                         }
                     }
@@ -418,39 +404,36 @@ public class FMRadioPlayerService extends Service {
                     int preFreq = mCurFreq;
                     mCurFreq = Integer.parseInt(value);
                     Log.w(TAG, "OnCommandCompleteListener : FM_CMD_SEEK_COMPLETE = " + status);
-                    if (preFreq == mCurFreq) {
-                        if (mCurFreq == FMUtil.MAX_FREQUENCY || mCurFreq == FMUtil.MIN_FREQUENCY) {
-                            status = 0;
-                        }
-                    }
+                    Log.d(TAG, "OnCommandCompleteListener : seek completed, frequency = " + mCurFreq);
                     resetRDSData();
-                    if (status == 0) {
-                        Log.d(TAG, "OnCommandCompleteListener : seek opt reach limit");
-                        notifyCmdResults(FM_SEEK_SUCCEED_AND_REACHLIMIT, value);
-                    } else {
-                        Log.d(TAG, "OnCommandCompleteListener : seek completed, frequency = " + mCurFreq);
-                        notifyCmdResults(FM_SEEK_SUCCEED, value);
-                    }
+                    notifySeekResult(true);
                     if (preFreq != mCurFreq) {
                         updateStateIndicators();
                     }
                     break;
                 case 2:
                     Log.w(TAG, "OnCommandCompleteListener : FM_CMD_SCAN_COMPLETE = " + status);
-                    if (status == 0) {
-                        notifyCmdResults(FM_SCAN_FAILED, null);
-                    } else {
-                        Log.d(TAG, "OnCommandCompleteListener : scan completed");
+                    if (status != 0) {
                         resetRDSData();
-                        notifyCmdResults(FM_SCAN_SUCCEED, value);
+                    }
+                    if (mCallbacks != null) {
+                        try {
+                            mCallbacks.onScanFinished(status != 0, Integer.parseInt(value));
+                        } catch (RemoteException e) {
+                            Log.e(TAG, "Could not report scan result", e);
+                        }
                     }
                     break;
                 case 3:
                     Log.w(TAG, "OnCommandCompleteListener : FM_CMD_ABORT_COMPLETE = " + status);
                     if (status == 0) {
-                        notifyCmdResults(FM_HW_ERROR_FRQ, null);
-                    } else {
-                        notifyCmdResults(FM_ABORT_COMPLETE, value);
+                        notifyTuneResult(false);
+                    } else if (mCallbacks != null) {
+                        try {
+                            mCallbacks.onAbortComplete();
+                        } catch (RemoteException e) {
+                            Log.e(TAG, "Could not report abort complete", e);
+                        }
                     }
                     break;
                 case 4:
@@ -463,7 +446,7 @@ public class FMRadioPlayerService extends Service {
                         if (!TextUtils.equals(mRdsTextID, newName)) {
                             mRdsTextID = newName;
                             updateStateIndicators();
-                            notifyCmdResults(FM_RDS_DATA_AVAILABLE, Integer.valueOf(mCurFreq));
+                            notifyRdsUpdate();
                         }
                     }
                     break;
@@ -474,7 +457,7 @@ public class FMRadioPlayerService extends Service {
                         Log.w(TAG, "RDS information was ignored by UI.");
                     } else if (!TextUtils.equals(mRdsTextDisplay, value)) {
                         mRdsTextDisplay = value;
-                        notifyCmdResults(FM_RDS_DATA_AVAILABLE, Integer.valueOf(mCurFreq));
+                        notifyRdsUpdate();
                     }
                     break;
                 case 6:
@@ -488,7 +471,7 @@ public class FMRadioPlayerService extends Service {
                         if (!TextUtils.equals(mRdsTextID, newName)) {
                             mRdsTextID = mIFMRadioService.getRDSStationName();
                             updateStateIndicators();
-                            notifyCmdResults(FM_RDS_DATA_AVAILABLE, Integer.valueOf(mCurFreq));
+                            notifyRdsUpdate();
                         }
                     }
                     break;
@@ -504,7 +487,7 @@ public class FMRadioPlayerService extends Service {
                         }
                         if (mRdsValuePTY != newPty) {
                             Log.w(TAG, "PTY value after adjusting for band = " + mRdsValuePTY);
-                            notifyCmdResults(FM_RDS_DATA_AVAILABLE, Integer.valueOf(mCurFreq));
+                            notifyRdsUpdate();
                         }
                     }
                     break;
@@ -515,7 +498,7 @@ public class FMRadioPlayerService extends Service {
                 case 9:
                     Log.w(TAG, "OnCommandCompleteListener : FM_CMD_ENABLE_COMPLETE = " + status);
                     if (status == 0) {
-                        notifyCmdResults(FM_OPEN_FAILED, null);
+                        notifyEnableChangeComplete(true, false);
                     } else {
                         misPowerOn = true;
                         Log.w(TAG, "Bind to FMRadioService success!");
@@ -549,7 +532,7 @@ public class FMRadioPlayerService extends Service {
                             }
                         }
                         if (!result) {
-                            notifyCmdResults(FM_HW_ERROR_FRQ, null);
+                            notifyTuneResult(false);
                         }
                     }
                     break;
@@ -568,18 +551,29 @@ public class FMRadioPlayerService extends Service {
                         mServiceState = new FMStateInitED();
                         mServiceState.prepare();
                         mServiceState = new FMStateReady();
-                        Intent i = new Intent(FM_POWERON_SUCCESS);
-                        sendBroadcast(i);
+                        notifyEnableChangeComplete(true, true);
                     }
                     break;
                 case 24:
                     Log.w(TAG, "OnCommandCompleteListener : FM_CMD_AUDIO_MODE_CHANGED = " + status);
                     mAudioMode = Integer.parseInt(value);
-                    notifyCmdResults(FM_AUDIO_MODE_CHANGED, null);
+                    if (mCallbacks != null) {
+                        try {
+                            mCallbacks.onAudioModeChanged(mAudioMode);
+                        } catch (RemoteException e) {
+                            Log.e(TAG, "Could not report audio mode change", e);
+                        }
+                    }
                     break;
                 case 25:
                     Log.w(TAG, "OnCommandCompleteListener : FM_CMD_SCANNING = " + status);
-                    notifyCmdResults(FM_SCANNING, value);
+                    if (mCallbacks != null) {
+                        try {
+                            mCallbacks.onScanUpdate(Integer.parseInt(value));
+                        } catch (RemoteException e) {
+                            Log.e(TAG, "Could not report scan update", e);
+                        }
+                    }
                     break;
                 case 11:
                 case 12:
@@ -616,8 +610,12 @@ public class FMRadioPlayerService extends Service {
                     } else if (cmd == 22) {
                         Log.w(TAG, "OnCommandCompleteListener : FM_CMD_SET_VOLUME_DONE = " + status);
                     }
-                    if (status == 0) {
-                        notifyCmdResults(FM_HW_ERROR_UNKNOWN, null);
+                    if (status == 0 && mCallbacks != null) {
+                        try {
+                            mCallbacks.onError();
+                        } catch (RemoteException e) {
+                            Log.e(TAG, "Could not report error", e);
+                        }
                     }
                     break;
              }
@@ -625,6 +623,16 @@ public class FMRadioPlayerService extends Service {
     };
 
     private final IFMRadioPlayerService.Stub mBinder = new IFMRadioPlayerService.Stub() {
+        @Override
+        public void registerCallbacks(IFMRadioPlayerServiceCallbacks cb) {
+            mCallbacks = cb;
+        }
+
+        @Override
+        public void unregisterCallbacks() {
+            mCallbacks = null;
+        }
+
         @Override
         public int getAudioMode() {
             Log.w(TAG, "IFMRadioPlayerService.Stub : getAudioMode");
@@ -707,7 +715,7 @@ public class FMRadioPlayerService extends Service {
                         mIFMRadioService.tune((Integer) msg.obj);
                     } catch (RemoteException e) {
                         Log.e(TAG, "tune Failed: " + e.getMessage());
-                        notifyCmdResults(FM_HW_ERROR_FRQ, null);
+                        notifyTuneResult(false);
                     }
                     break;
                 case MSG_SEEK_CHANNEL:
@@ -716,7 +724,7 @@ public class FMRadioPlayerService extends Service {
                         mIFMRadioService.seek((Integer) msg.obj);
                     } catch (RemoteException e) {
                         Log.e(TAG, "seek Failed: " + e.getMessage());
-                        notifyCmdResults(FM_SEEK_FAILED, null);
+                        notifySeekResult(false);
                     }
                     break;
                 case MSG_SET_VOLUME:
@@ -746,23 +754,6 @@ public class FMRadioPlayerService extends Service {
 
     private final boolean isMusicPlaying() {
         return ((AudioManager) getSystemService(AUDIO_SERVICE)).isMusicActive();
-    }
-
-    private void notifyCmdResults(String what, Object value) {
-        Intent i = new Intent(what);
-        if (what.equals(FM_QUIT)) {
-            restoreAudioRoute();
-            stopSelf();
-        } else if (what.equals(FM_SEEK_SUCCEED) || what.equals(FM_SEEK_SUCCEED_AND_REACHLIMIT) || what.equals(FM_SCANNING) || what.equals(FM_SCAN_SUCCEED)) {
-            Log.d(TAG, "in notifyCmdResults adding frequency value = " + Integer.parseInt(value.toString()));
-            i.putExtra("freq", Integer.parseInt(value.toString()));
-        } else if (what.equals(FM_RDS_DATA_AVAILABLE)) {
-            i.putExtra("freq", Integer.parseInt(value.toString()));
-            i.putExtra("rds_text_display", mRdsTextDisplay);
-            i.putExtra("rds_text_id", mRdsTextID);
-            i.putExtra("rds_value_pty", mRdsValuePTY);
-        }
-        sendBroadcast(i);
     }
 
     private void registerObserver() {
@@ -801,7 +792,7 @@ public class FMRadioPlayerService extends Service {
                     Log.v(TAG, "Got airplane mode change message, new state " + state);
                     if (state != 0) {
                         showNoticeDialog(R.string.fmradio_airplane_mode_enable_in_listen);
-                        notifyCmdResults(FM_QUIT, null);
+                        shutdown();
                     }
                 } else if (action.equals(ACTION_AUDIOPATH_FREE)) {
                     Log.v(TAG, "Audio path is available again");
@@ -812,7 +803,7 @@ public class FMRadioPlayerService extends Service {
                 } else if (action.equals(ACTION_MUSIC_PLAYSTATE_CHANGED)) {
                     if (isMusicPlaying()) {
                         showNoticeDialog(R.string.fmradio_music_playing_in_listen);
-                        notifyCmdResults(FM_QUIT, null);
+                        shutdown();
                     }
                 } else if (action.equals(ACTION_FMRADIO_COMMAND)) {
                     Log.d(TAG, "receive fmradio command");
@@ -826,7 +817,7 @@ public class FMRadioPlayerService extends Service {
                         setFMMuteState(false);
                     } else if (cmd.equals(STOP)) {
                         Log.d(TAG, "FM will exit for Video/audio player");
-                        notifyCmdResults(FM_QUIT, null);
+                        shutdown();
                     }
                     // XXX: CMD_START?
                 } else if (action.equals(TelephonyManager.ACTION_PHONE_STATE_CHANGED)) {
@@ -913,7 +904,7 @@ public class FMRadioPlayerService extends Service {
 
         if (isAirplaneModeOn()) {
             showNoticeDialog(R.string.fmradio_airplane_mode_enable_at_begin);
-            notifyCmdResults(FM_QUIT, null);
+            shutdown();
             return null;
         }
 
@@ -1098,7 +1089,57 @@ public class FMRadioPlayerService extends Service {
         } else {
             showNoticeDialog(oldState < 0 ?
                     R.string.fmradio_no_headset_at_begin : R.string.fmradio_no_headset_in_listen);
-            notifyCmdResults(FM_QUIT, null);
+            shutdown();
         }
+    }
+
+    private void notifyEnableChangeComplete(boolean enabled, boolean success) {
+        if (mCallbacks != null) {
+            try {
+                if (enabled) {
+                    mCallbacks.onEnabled(success);
+                } else {
+                    mCallbacks.onDisabled();
+                }
+            } catch (RemoteException e) {
+                Log.e(TAG, "Could not report enable state", e);
+            }
+        }
+    }
+
+    private void notifyTuneResult(boolean success) {
+        if (mCallbacks != null) {
+            try {
+                mCallbacks.onTuneChanged(success);
+            } catch (RemoteException e) {
+                Log.e(TAG, "Could not report tune change", e);
+            }
+        }
+    }
+
+    private void notifySeekResult(boolean success) {
+        if (mCallbacks != null) {
+            try {
+                mCallbacks.onSeekFinished(success, mCurFreq);
+            } catch (RemoteException e) {
+                Log.e(TAG, "Could not report seek result", e);
+            }
+        }
+    }
+
+    private void notifyRdsUpdate() {
+        if (mCallbacks != null) {
+            try {
+                mCallbacks.onRdsDataChanged(mCurFreq, mRdsTextID, mRdsTextDisplay, mRdsValuePTY);
+            } catch (RemoteException e) {
+                Log.e(TAG, "Could not report RDS change", e);
+            }
+        }
+    }
+
+    private void shutdown() {
+        notifyEnableChangeComplete(false, true);
+        restoreAudioRoute();
+        stopSelf();
     }
 }

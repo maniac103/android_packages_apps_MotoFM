@@ -1,5 +1,7 @@
 package com.motorola.fmradio;
 
+import com.motorola.fmradio.IFMRadioPlayerServiceCallbacks;
+
 interface IFMRadioPlayerService {
     boolean powerOn(int freq);
     boolean powerOff();
@@ -18,4 +20,7 @@ interface IFMRadioPlayerService {
     int getAudioRouting();
 
     void ignoreRdsEvent(boolean ignoreRds);
+
+    void registerCallbacks(IFMRadioPlayerServiceCallbacks cb);
+    void unregisterCallbacks();
 }

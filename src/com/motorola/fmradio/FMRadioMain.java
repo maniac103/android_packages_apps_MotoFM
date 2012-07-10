@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
@@ -213,7 +212,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private int mCurFreq = FMUtil.MIN_FREQUENCY;
     private int mFirstCounter = FMUtil.MIN_FREQUENCY;
     private boolean mInitSuccess = true;
-    private BroadcastReceiver mIntentReceiver = null;
     private int mLongPressButtonType = LONGPRESS_BUTTON_NONE;
     private int mPreFreq = FMUtil.MIN_FREQUENCY;
     private int mRDSFreq = 0;
@@ -283,6 +281,13 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
             boolean bPowerStatus = false;
             if (mService != null) {
+                try {
+                    mService.registerCallbacks(mServiceCallbacks);
+                } catch (RemoteException e) {
+                    Log.e(TAG, "Could not register with service");
+                    unbindFMRadioService();
+                    return;
+                }
                 try {
                     bPowerStatus = mService.isPowerOn();
                 } catch (RemoteException e) {
@@ -614,6 +619,91 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         }
     };
 
+    private IFMRadioPlayerServiceCallbacks.Stub mServiceCallbacks = new IFMRadioPlayerServiceCallbacks.Stub() {
+        @Override
+        public void onEnabled(boolean success) {
+            if (success) {
+                Log.w(TAG, "Real FM power on success.");
+                if (pDialog_waitpoweron != null) {
+                    Log.w(TAG, "poweron success, dismiss waitting dialog");
+                    pDialog_waitpoweron.dismiss();
+                    pDialog_waitpoweron = null;
+                }
+                if (!Preferences.isEnabled(FMRadioMain.this)) {
+                    mHandler.sendEmptyMessage(START_FMRADIO);
+                }
+            } else {
+                mHandler.sendEmptyMessage(FM_OPEN_FAILED);
+            }
+        }
+
+        @Override
+        public void onDisabled() {
+            finish();
+        }
+
+        @Override
+        public void onTuneChanged(boolean success) {
+            mHandler.sendEmptyMessage(success ? FM_TUNE_SUCCEED : FM_HW_ERROR_FRQ);
+        }
+
+        @Override
+        public void onSeekFinished(boolean success, int newFrequency) {
+            if (success) {
+                boolean reachedLimit = mCurFreq == newFrequency &&
+                        (newFrequency == FMUtil.MIN_FREQUENCY || newFrequency == FMUtil.MAX_FREQUENCY);
+                mCurFreq = newFrequency;
+                mHandler.sendEmptyMessage(reachedLimit ? FM_SEEK_SUCCEED_AND_REACHLIMIT : FM_SEEK_SUCCEED);
+            } else {
+                mHandler.sendEmptyMessage(FM_SEEK_FAILED);
+            }
+        }
+
+        @Override
+        public void onScanUpdate(int newFrequency) {
+            mCurFreq = newFrequency;
+            mHandler.sendEmptyMessage(FM_SCANNING);
+        }
+
+        @Override
+        public void onScanFinished(boolean success, int newFrequency) {
+            if (success) {
+                mCurFreq = newFrequency;
+            }
+            mHandler.sendEmptyMessage(FM_SCAN_SUCCEED);
+        }
+
+        @Override
+        public void onAbortComplete() {
+            if (isScanCanceled) {
+                if (count_save < PRESET_NUM) {
+                    mHandler.sendEmptyMessage(SEEK_NEXT);
+                } else {
+                    mHandler.sendEmptyMessage(FM_SCAN_SUCCEED);
+                }
+            }
+        }
+
+        @Override
+        public void onError() {
+            mHandler.sendEmptyMessage(FM_HW_ERROR_UNKNOWN);
+        }
+
+        @Override
+        public void onRdsDataChanged(int frequency, String stationName, String radioText, int pty) {
+            mRDSFreq = frequency;
+            mRdsStationName = stationName;
+            mRdsRadioText = radioText.replaceAll("\n", " ");
+            mRdsPTYValue = pty;
+            mHandler.sendEmptyMessage(FM_RDS_DATA_AVAILABLE);
+        }
+
+        @Override
+        public void onAudioModeChanged(int newMode) {
+            updateStereoStatus();
+        }
+    };
+
     private boolean bindToService() {
         Log.d(TAG, "Start to bind to FMRadio service");
         Intent i = new Intent(this, FMRadioPlayerService.class);
@@ -623,6 +713,10 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     private void unbindFMRadioService() {
         if (mIsBound) {
+            try {
+                mService.unregisterCallbacks();
+            } catch (RemoteException e) {
+            }
             unbindService(mServConnection);
             mIsBound = false;
         }
@@ -903,91 +997,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 Log.d(TAG, "mService.powerOff() RemoteException!");
             }
         }
-    }
-
-    private void registerBroadcastReceiver() {
-        if (mIntentReceiver != null) {
-            return;
-        }
-
-        mIntentReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                Log.v(TAG, "Launcher broadcast Received " + action);
-                if (action.equals(FMRadioPlayerService.FM_OPEN_FAILED)) {
-                    mHandler.sendEmptyMessage(FM_OPEN_FAILED);
-                } else if (action.equals(FMRadioPlayerService.FM_TUNE_SUCCEED)) {
-                    mHandler.sendEmptyMessage(FM_TUNE_SUCCEED);
-                } else if (action.equals(FMRadioPlayerService.FM_SEEK_SUCCEED)) {
-                    mCurFreq = intent.getIntExtra("freq", FMUtil.MIN_FREQUENCY);
-                    mHandler.sendEmptyMessage(FM_SEEK_SUCCEED);
-                } else if (action.equals(FMRadioPlayerService.FM_SEEK_FAILED)) {
-                    mHandler.sendEmptyMessage(FM_SEEK_FAILED);
-                } else if (action.equals(FMRadioPlayerService.FM_SEEK_SUCCEED_AND_REACHLIMIT)) {
-                    mCurFreq = intent.getIntExtra("freq", FMUtil.MAX_FREQUENCY);
-                    mHandler.sendEmptyMessage(FM_SEEK_SUCCEED_AND_REACHLIMIT);
-                } else if (action.equals(FMRadioPlayerService.FM_SCAN_SUCCEED)) {
-                    mCurFreq = intent.getIntExtra("freq", FMUtil.MIN_FREQUENCY);
-                    mHandler.sendEmptyMessage(FM_SCAN_SUCCEED);
-                } else if (action.equals(FMRadioPlayerService.FM_SCANNING)) {
-                    mCurFreq = intent.getIntExtra("freq", FMUtil.MIN_FREQUENCY);
-                    mHandler.sendEmptyMessage(FM_SCANNING);
-                } else if (action.equals(FMRadioPlayerService.FM_SCAN_FAILED)) {
-                    mHandler.sendEmptyMessage(FM_SCAN_SUCCEED); // XXX: 0x10 in smali
-                } else if (action.equals(FMRadioPlayerService.FM_ABORT_COMPLETE)) {
-                    if (isScanCanceled) {
-                        if (count_save < PRESET_NUM) {
-                            mHandler.sendEmptyMessage(SEEK_NEXT);
-                        } else {
-                            mHandler.sendEmptyMessage(FM_SCAN_SUCCEED); // XXX: 0x10 in smali
-                        }
-                    }
-                } else if (action.equals(FMRadioPlayerService.FM_HW_ERROR_UNKNOWN)) {
-                    mHandler.sendEmptyMessage(FM_HW_ERROR_UNKNOWN);
-                } else if (action.equals(FMRadioPlayerService.FM_HW_ERROR_FRQ)) {
-                    mHandler.sendEmptyMessage(FM_HW_ERROR_FRQ);
-                } else if (action.equals(FMRadioPlayerService.FM_RDS_DATA_AVAILABLE)) {
-                    mRDSFreq = intent.getIntExtra("freq", 0);
-                    mRdsStationName = intent.getStringExtra("rds_text_id");
-                    mRdsRadioText = intent.getStringExtra("rds_text_display").replaceAll("\n", " ");
-                    mRdsPTYValue = intent.getIntExtra("rds_value_pty", 0);
-                    mHandler.sendEmptyMessage(FM_RDS_DATA_AVAILABLE);
-                } else if (action.equals(FMRadioPlayerService.FM_POWERON_SUCCESS)) {
-                    Log.w(TAG, "Real FM power on success.");
-                    if (pDialog_waitpoweron != null) {
-                        Log.w(TAG, "poweron success, dismiss waitting dialog");
-                        pDialog_waitpoweron.dismiss();
-                        pDialog_waitpoweron = null;
-                    }
-                    if (!Preferences.isEnabled(context)) {
-                        mHandler.sendEmptyMessage(START_FMRADIO);
-                    }
-                } else if (action.equals(FMRadioPlayerService.FM_QUIT)) {
-                    finish();
-                } else if (action.equals(FMRadioPlayerService.FM_AUDIO_MODE_CHANGED)) {
-                    updateStereoStatus();
-                }
-            }
-        };
-
-        IntentFilter i = new IntentFilter(FMRadioPlayerService.FM_OPEN_FAILED);
-        i.addAction(FMRadioPlayerService.FM_TUNE_SUCCEED);
-        i.addAction(FMRadioPlayerService.FM_SEEK_SUCCEED);
-        i.addAction(FMRadioPlayerService.FM_SEEK_FAILED);
-        i.addAction(FMRadioPlayerService.FM_SEEK_SUCCEED_AND_REACHLIMIT);
-        i.addAction(FMRadioPlayerService.FM_HW_ERROR_UNKNOWN);
-        i.addAction(FMRadioPlayerService.FM_HW_ERROR_FRQ);
-        i.addAction(FMRadioPlayerService.FM_RDS_DATA_AVAILABLE);
-        i.addAction(FMRadioPlayerService.FM_QUIT);
-        i.addAction(FMRadioPlayerService.FM_POWERON_SUCCESS);
-        i.addAction(FMRadioPlayerService.FM_SCAN_SUCCEED);
-        i.addAction(FMRadioPlayerService.FM_SCANNING);
-        i.addAction(FMRadioPlayerService.FM_SCAN_FAILED);
-        i.addAction(FMRadioPlayerService.FM_ABORT_COMPLETE);
-        i.addAction(FMRadioPlayerService.FM_AUDIO_MODE_CHANGED);
-
-        registerReceiver(mIntentReceiver, i);
     }
 
     private void resetTimer() {
@@ -1300,7 +1309,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
         initResourceRefs();
         mIsBound = bindToService();
-        registerBroadcastReceiver();
 
         PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
         mWakeLock = pm.newWakeLock(6, getClass().getName());
@@ -1433,7 +1441,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         ignoreRdsEvent(false);
         unbindFMRadioService();
         mService = null;
-        unregisterReceiver(mIntentReceiver);
         mWakeLock.release();
         if (pDialog_waitpoweron != null) {
             pDialog_waitpoweron.dismiss();
