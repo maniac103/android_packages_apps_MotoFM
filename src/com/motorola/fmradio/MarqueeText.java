@@ -10,9 +10,7 @@ import android.view.MotionEvent;
 import android.view.View;
 
 public class MarqueeText extends View {
-    public static final int MARQUEE_PIXELS_PER_REFRESH = 1;
-    public static final int MARQUEE_PIXELS_PER_SECOND = 30;
-    public static final int MARQUEE_UPDATES_PER_SECOND = 20;
+    public static final int MARQUEE_PIXELS_PER_REFRESH = 3;
     public static final int MARQUEE_REFRESH_DELAY = 50;
     public static final int MARQUEE_START_DELAY = 2000;
 
@@ -23,6 +21,7 @@ public class MarqueeText extends View {
     private int mLastX;
     private int mScrollLength;
     private int mScrollPos;
+    private boolean mScrollForward;
     private String mText;
     private Paint mTextPaint;
     private boolean mTouchDown = false;
@@ -93,6 +92,7 @@ public class MarqueeText extends View {
     public void marqueeStart() {
         marqueePause();
         mScrollPos = 0;
+        mScrollForward = true;
         mScrollLength = (int) (mTextPaint.measureText(mText) - getWidth());
         invalidate();
         if (mScrollLength > 0) {
@@ -101,14 +101,22 @@ public class MarqueeText extends View {
     }
 
     public void marqueeTick() {
-        int delay = MARQUEE_REFRESH_DELAY;
-        mScrollPos++;
-        invalidate();
-        if (mScrollPos > mScrollLength) {
-            mScrollPos = 0;
-            delay = MARQUEE_START_DELAY;
+        if (mScrollForward) {
+            mScrollPos += MARQUEE_PIXELS_PER_REFRESH;
+            if (mScrollPos > mScrollLength) {
+                mScrollPos = mScrollLength;
+                mScrollForward = false;
+            }
+        } else {
+            mScrollPos -= MARQUEE_PIXELS_PER_REFRESH;
+            if (mScrollPos < 0) {
+                mScrollPos = 0;
+                mScrollForward = true;
+            }
         }
-        mMarqueeHandler.postDelayed(mTickEvent, delay);
+
+        invalidate();
+        mMarqueeHandler.postDelayed(mTickEvent, MARQUEE_REFRESH_DELAY);
     }
 
     @Override

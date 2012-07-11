@@ -11,5 +11,5 @@ interface IFMRadioPlayerServiceCallbacks {
     void onAbortComplete();
     void onError();
     void onRdsDataChanged(int frequency, String stationName, String radioText, int pty);
-    void onAudioModeChanged(int newMode);
+    void onAudioModeChanged(boolean stereo);
 }

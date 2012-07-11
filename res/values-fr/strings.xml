@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Radio FM</string>
-    <string name="fmradio_service_label">Radio FM</string>
     <string name="ok">OK</string>
     <string name="cancel">Annuler</string>
     <string name="close">Fermer</string>
@@ -19,7 +18,6 @@
     <string name="save_preset">Enregistrer station préréglée</string>
     <string name="clear_presets">Effacer stations prérégl.</string>
     <string name="scaned">Recherche effectuée</string>
-    <string name="scan_save">Rechercher/enregistrer</string>
     <string name="scan">Rechercher</string>
     <string name="by_loudspeaker">Haut-parleur</string>
     <string name="by_headset">Casque</string>
@@ -33,22 +31,14 @@
     <string name="select_all">Sélectionner tout</string>
     <string name="unselect_all">Désélectionner tout</string>
     <string name="select">Sélectionner</string>
-    <string name="fm_volume">Volume radio FM</string>
     <string name="fmradio_scan_begin_msg">0 station trouvée.</string>
     <string name="fmradio_scan_confirm_msg">Souhaitez-vous rechercher toutes les stations disponibles ?</string>
     <string name="fmradio_clear_confirm_msg">"Souhaitez-vous effacer toutes les stations enregistrées avant d'effectuer une recherche ?"</string>
-    <string name="fmradio_no_headset_at_begin">Pour utiliser la radio FM, branchez un casque.</string>
-    <string name="fmradio_no_headset_in_listen">"L'utilisation de la radio FM nécessite un casque. Veuillez en brancher un."</string>
-    <string name="fmradio_headset_is_plugged_in">Casque branché.</string>
-    <string name="fmradio_headset_is_plugged_out">"Casque débranché. L'utilisation de la radio FM nécessite un casque."</string>
-    <string name="fmradio_airplane_mode_enable_at_begin">Pour utiliser la radio FM, désactivez le mode avion.</string>
-    <string name="fmradio_airplane_mode_enable_in_listen">"La radio FM s'éteint automatiquement en mode Avion."</string>
+    <string name="fmradio_no_headset">"L'utilisation de la radio FM nécessite un casque. Veuillez en brancher un."</string>
+    <string name="fmradio_airplane_mode_enabled">Pour utiliser la radio FM, désactivez le mode avion.</string>
     <string name="fmradio_music_playing_at_begin">Pour utiliser la radio FM, désactivez la musique.</string>
     <string name="fmradio_music_playing_in_listen">"La radio FM s'éteint automatiquement lorsque vous écoutez de la musique."</string>
-    <string name="fmradio_edit_failed_msg">Veuillez saisir un numéro de fréquence compris entre 87,5 MHz et 108 MHz.</string>
     <string name="fmradio_waiting_for_power_on">Chargement de la radio FM, veuillez patienter.</string>
-    <string name="error_mem_full">Mémoire pleine, la radio FM ne peut pas démarrer.</string>
-    <string name="error_save_channel">"Impossible d'enregistrer le canal. Veuillez réessayer."</string>
     <string name="service_start_error_title">Échec de démarrage du service de radio FM</string>
     <string name="service_start_error_msg">La radio FM a rencontré un problème et va fermer. Essayez de démarrer la radio FM à nouveau.</string>
     <string name="service_start_error_button">Quitter</string>

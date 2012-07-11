@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Rádio FM</string>
-    <string name="fmradio_service_label">Rádio FM</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancelar</string>
     <string name="close">Fechar</string>
@@ -19,7 +18,6 @@
     <string name="save_preset">Salvar pré definida</string>
     <string name="clear_presets">Fechar pré definidas</string>
     <string name="scaned">Procuradas</string>
-    <string name="scan_save">Procurar e salvar</string>
     <string name="scan">Procurar</string>
     <string name="by_loudspeaker">Alto-falante</string>
     <string name="by_headset">Fones de ouvido</string>
@@ -33,22 +31,14 @@
     <string name="select_all">Marcar todas</string>
     <string name="unselect_all">Desmarcar todas</string>
     <string name="select">Selecionar</string>
-    <string name="fm_volume">Volume do rádio FM</string>
     <string name="fmradio_scan_begin_msg">Procurou 0 estações.</string>
     <string name="fmradio_scan_confirm_msg">Deseja procurar todas as estações disponíveis?</string>
     <string name="fmradio_clear_confirm_msg">Deseja apagar todas as estações salvas antes de procurar?</string>
-    <string name="fmradio_no_headset_at_begin">Para usar o rádio FM, por favor, conecte um fone de ouvido.</string>
-    <string name="fmradio_no_headset_in_listen">Rádio FM requer um fone de ouvido para funcionar. Por favor, conecte um fone de ouvido.</string>
-    <string name="fmradio_headset_is_plugged_in">Fone de ouvido conectado.</string>
-    <string name="fmradio_headset_is_plugged_out">Fone de ouvido desconectado. Rádio FM requer um fone de ouvido para funcionar.</string>
-    <string name="fmradio_airplane_mode_enable_at_begin">Para usar o rádio FM, por favor, desligue o modo avião.</string>
-    <string name="fmradio_airplane_mode_enable_in_listen">O rádio FM é automaticamente desligado no modo avião.</string>
+    <string name="fmradio_no_headset">Rádio FM requer um fone de ouvido para funcionar. Por favor, conecte um fone de ouvido.</string>
+    <string name="fmradio_airplane_mode_enabled">Para usar o rádio FM, por favor, desligue o modo avião.</string>
     <string name="fmradio_music_playing_at_begin">Para usar o rádio FM, por favor, desligue o aplicativo Música.</string>
     <string name="fmradio_music_playing_in_listen">O rádio FM é automaticamente desligado ao reproduzir uma música.</string>
-    <string name="fmradio_edit_failed_msg">Por favor, insira uma frequência entre 87.5 e 108.0MHz.</string>
     <string name="fmradio_waiting_for_power_on">Carregando o rádio FM. Por favor, aguarde.</string>
-    <string name="error_mem_full">Memória cheia. Não é possível executar o rádio FM.</string>
-    <string name="error_save_channel">Não é possível salvar canal. Por favor, tente novamente.</string>
     <string name="service_start_error_title">Falha no serviço de rádio FM</string>
     <string name="service_start_error_msg">Ocorreu um erro no rádio FM e ele será fechado. Tente executá-lo novamente.</string>
     <string name="service_start_error_button">Sair</string>

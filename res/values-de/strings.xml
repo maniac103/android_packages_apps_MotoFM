@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">FM-Radio</string>
-    <string name="fmradio_service_label">FM-Radio</string>
     <string name="ok">OK</string>
     <string name="cancel">Abbrechen</string>
     <string name="close">Schließen</string>
@@ -19,7 +18,6 @@
     <string name="save_preset">Voreinstellung speichern</string>
     <string name="clear_presets">Voreinstellung löschen</string>
     <string name="scaned">Gescannt</string>
-    <string name="scan_save">Scannen und speichern</string>
     <string name="scan">Scannen</string>
     <string name="saved">Gespeichert.</string>
     <string name="by_loudspeaker">Lautsprecher</string>
@@ -36,7 +34,6 @@
     <string name="unselect_all">Gesamte Auswahl aufheben</string>
     <string name="select">Auswählen</string>
     <string name="all_presets">Alle Voreinstellungen</string>
-    <string name="fm_volume">Lautstärke FM-Radio</string>
     <string name="fmradio_scan_begin_msg">Keine Sender gefunden.</string>
     <string name="fmradio_scanning_title">Sendersuche</string>
     <string name="fmradio_found">Gefunden:</string>
@@ -45,18 +42,11 @@
     <string name="fmradio_save_canceled">Suche abgebrochen.</string>
     <string name="fmradio_scan_confirm_msg">Möchten Sie alle verfügbaren Sender suchen?</string>
     <string name="fmradio_clear_confirm_msg">Möchten Sie vor dem Suchen alle gespeicherten Sender löschen?</string>
-    <string name="fmradio_no_headset_at_begin">Um das FM-Radio zu nutzen, schließen Sie ein Headset an.</string>
-    <string name="fmradio_no_headset_in_listen">Für das FM-Radio ist ein Headset erforderlich. Bitte schließen Sie ein Headset an.</string>
-    <string name="fmradio_headset_is_plugged_in">Kopfhörer ist angeschlossen.</string>
-    <string name="fmradio_headset_is_plugged_out">Headset nicht angeschlossen. Für das FM-Radio ist ein Headset erforderlich.</string>
-    <string name="fmradio_airplane_mode_enable_at_begin">Schalten Sie den Flugzeugmodus aus, um FM-Radio zu verwenden.</string>
-    <string name="fmradio_airplane_mode_enable_in_listen">Das FM-Radio schaltet sich im Flugzeugmodus automatisch aus.</string>
+    <string name="fmradio_no_headset">Für das FM-Radio ist ein Headset erforderlich. Bitte schließen Sie ein Headset an.</string>
+    <string name="fmradio_airplane_mode_enabled">Schalten Sie den Flugzeugmodus aus, um FM-Radio zu verwenden.</string>
     <string name="fmradio_music_playing_at_begin">Schalten Sie die Musik aus, um FM-Radio zu verwenden.</string>
     <string name="fmradio_music_playing_in_listen">Das FM-Radio schaltet sich während der Musikwiedergabe automatisch aus.</string>
-    <string name="fmradio_edit_failed_msg">Bitte geben Sie eine Frequenz zwischen 87,5 MHz und 108,0 MHz ein.</string>
     <string name="fmradio_waiting_for_power_on">Das FM-Radio wird geladen, bitte warten Sie.</string>
-    <string name="error_mem_full">Speicher voll, FM-Radio kann nicht gestartet werden.</string>
-    <string name="error_save_channel">Der Sender kann nicht gespeichert werden. Bitte versuchen Sie es erneut.</string>
     <string name="error_start_scan">Die Sendersuche konnte nicht gestartet werden. Bitte versuchen Sie es noch einmal.</string>
     <string name="service_start_error_title">Starten des FM-Radio-Services fehlgeschlagen</string>
     <string name="service_start_error_msg">Das FM-Radio hat ein Problem festgestellt und muss beendet werden. Versuchen Sie das FM-Radio erneut zu starten.</string>
