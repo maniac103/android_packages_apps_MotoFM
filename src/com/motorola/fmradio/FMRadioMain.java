@@ -236,7 +236,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 }
             }
             if (mService == null) {
-                unbindFMRadioService();
+                unbindService();
                 finish();
                 return;
             }
@@ -334,7 +334,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     mHandler.sendMessageDelayed(Message.obtain(msg), LONG_PRESS_TUNE_TIMEOUT);
                     break;
                 case MSG_CONTINUE_SEEK:
-                    seekFMRadioStation(0, msg.arg1 != 0);
+                    startSeek(0, msg.arg1 != 0);
                     break;
                 case MSG_STOP_SCAN_ANIMATION:
                     if (mScanBar.getBackground() != null) {
@@ -415,116 +415,388 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         }
     };
 
-    private boolean bindToService() {
-        Log.v(TAG, "Binding to player service");
-        Intent i = new Intent(this, FMRadioPlayerService.class);
-        startService(i);
-        return bindService(i, mServConnection, 0);
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "onCreate()");
+        super.onCreate(savedInstanceState);
+
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        setContentView(R.layout.main);
+        setVolumeControlStream(AudioManager.STREAM_FM);
+
+        mAM = (AudioManager) getSystemService(AUDIO_SERVICE);
+        mCurFreq = Preferences.getLastFrequency(this);
+
+        initUI();
+        mIsBound = bindToService();
+
+        PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+        mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, getClass().getName());
+        mWakeLock.setReferenceCounted(false);
+        updateDisplayPanel(mCurFreq, updatePresetSwitcher());
     }
 
-    private void unbindFMRadioService() {
-        if (mService != null) {
-            try {
-                mService.unregisterCallbacks();
-            } catch (RemoteException e) {
-            }
-        }
-        if (mIsBound) {
-            unbindService(mServConnection);
-            mIsBound = false;
-        }
-        stopService(new Intent(this, FMRadioPlayerService.class));
-    }
+    @Override
+    protected void onDestroy() {
+        Log.d(TAG, "onDestroy()");
+        super.onDestroy();
 
-    private void displayRdsScrollText(boolean show) {
-        Log.v(TAG, "displayRdsScrollText(" + show + ")");
-        if (!show) {
-            mRdsStationName = null;
-            mRdsRadioText = null;
-            mRdsPTYValue = 0;
-        }
-        if (mSeekBar != null && mRdsMarqueeText != null) {
-            if (show) {
-                mSeekBar.setVisibility(View.GONE);
-                mRdsMarqueeText.setVisibility(View.VISIBLE);
-            } else {
-                mSeekBar.setVisibility(View.VISIBLE);
-                mRdsMarqueeText.setVisibility(View.GONE);
-            }
+        unbindService();
+        mService = null;
+        mWakeLock.release();
+        if (mProgressDialog != null) {
+            mProgressDialog.dismiss();
         }
     }
 
-    private void enableActiveButton(View v) {
-        long id = v.getId();
-        for (ImageButton button : mSeekButtons) {
-            button.setEnabled(button.getId() == id);
-        }
-        updateButtonDrawables();
-        mChannelList.setEnabled(false);
+    @Override
+    protected void onPause() {
+        Log.d(TAG, "onPause()");
+        super.onPause();
+
+        Preferences.setLastFrequency(this, mCurFreq);
+        Preferences.setLastChannel(this, getSelectedPreset());
     }
 
-    private void updateButtonDrawables() {
-        for (ImageButton button : mSeekButtons) {
-            boolean enabled = button.isEnabled();
-            int resId = 0;
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        Log.d(TAG, "onConfigurationChanged()");
+        super.onConfigurationChanged(newConfig);
 
-            switch (button.getId()) {
-                case R.id.btn_seekbackward:
-                    resId = enabled ? R.drawable.fm_autosearch_reduce_enable : R.drawable.fm_autosearch_reduce_disable;
-                    break;
-                case R.id.btn_reduce:
-                    resId = enabled ? R.drawable.fm_manualadjust_reduce_enable : R.drawable.fm_manualadjust_reduce_disable;
-                    break;
-                case R.id.btn_add:
-                    resId = enabled ? R.drawable.fm_manualadjust_plus_enable : R.drawable.fm_manualadjust_plus_disable;
-                    break;
-                case R.id.btn_seekforward:
-                    resId = enabled ? R.drawable.fm_autosearch_plus_enable : R.drawable.fm_autosearch_plus_disable;
-                    break;
-            }
-            button.setBackgroundResource(resId);
-        }
+        setContentView(R.layout.main);
+        initUI();
+        updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+        enableUI(true);
     }
 
-    private void enableUI(boolean enabled) {
-        for (ImageButton button : mSeekButtons) {
-            button.setEnabled(enabled);
+    @Override
+    protected Dialog onCreateDialog(int id) {
+        switch (id) {
+            case DIALOG_SCAN_PROGRESS:
+                mProgressDialog = new ProgressDialog(this);
+                mProgressDialog.setTitle(getString(R.string.fmradio_scanning_title));
+                mProgressDialog.setMessage(getString(R.string.fmradio_scan_begin_msg));
+                mProgressDialog.setIndeterminate(false);
+                mProgressDialog.setCancelable(true);
+                mProgressDialog.setButton(getText(R.string.cancel), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        mProgressDialog.cancel();
+                    }
+                });
+                mProgressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    public void onCancel(DialogInterface dialog) {
+                        Log.v(TAG, "Cancelling progress dialog");
+                        try {
+                            mService.stopScan();
+                        } catch (RemoteException e) {
+                            Log.e(TAG, "Stopping scan failed", e);
+                        }
+                        mProgressDialog.dismiss();
+                        mProgressDialog = null;
+                        setSelectedPreset(-1);
+                        enableUI(true);
+                        mHandler.sendEmptyMessageDelayed(MSG_STOP_SCAN_ANIMATION, SCAN_STOP_DELAY);
+                    }
+                });
+                return mProgressDialog;
+            case DIALOG_IF_SCAN_FIRST:
+                return new AlertDialog.Builder(this)
+                        .setTitle(R.string.scan)
+                        .setMessage(R.string.fmradio_scan_confirm_msg)
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                                startScanning();
+                            }
+                        })
+                        .setNegativeButton(R.string.cancel, null)
+                        .create();
+            case DIALOG_IF_SCAN_NEXT:
+                return new AlertDialog.Builder(this)
+                        .setTitle(R.string.scan)
+                        .setMessage(R.string.fmradio_clear_confirm_msg)
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                                clearDB();
+                                startScanning();
+                            }
+                        })
+                        .setNegativeButton(R.string.cancel, null)
+                        .create();
         }
-        updateButtonDrawables();
-        if (mChannelList != null) {
-            mChannelList.setEnabled(enabled);
-        }
+
+        return null;
     }
 
-    private int getIndexOfEmptyItem() {
-        Cursor cursor = getContentResolver().query(Channels.CONTENT_URI, FMUtil.PROJECTION, null, null, null);
-        int count = 0;
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        if (mService == null) {
+            return false;
+        }
+        super.onPrepareOptionsMenu(menu);
 
-        if (cursor != null) {
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                if (cursor.getInt(FMUtil.CHANNEL_COLUMN_FREQ) == 0) {
-                    break;
+        boolean fmRadioEnabled = Preferences.isEnabled(this);
+        boolean canEditPreset = getSelectedPreset() >= 0;
+
+        menu.clear();
+        menu.add(Menu.NONE, CLEAR_ID, Menu.FIRST + 1, R.string.clear_presets).setIcon(R.drawable.ic_menu_clear_channel);
+        menu.add(Menu.NONE, EXIT_ID, Menu.FIRST + 4, R.string.exit).setIcon(R.drawable.ic_menu_exit);
+        if (canEditPreset && fmRadioEnabled) {
+            menu.add(Menu.NONE, EDIT_ID, Menu.FIRST, R.string.edit_preset).setIcon(R.drawable.ic_menu_edit_preset);
+        } else if (!canEditPreset) {
+            menu.add(Menu.NONE, SAVE_ID, Menu.FIRST, R.string.save_preset).setIcon(R.drawable.ic_menu_save_channel);
+        }
+        if (fmRadioEnabled) {
+            menu.add(Menu.NONE, SCAN_SAVE_ID, Menu.FIRST + 3, R.string.scan).setIcon(R.drawable.ic_menu_save_channel);
+        }
+
+        int audioRouting = 0;
+        try {
+            audioRouting = mService.getAudioRouting();
+        } catch (RemoteException e) {
+            Log.e(TAG, "Getting audio routing failed", e);
+        }
+        if (audioRouting == FMRadioPlayerService.FM_ROUTING_HEADSET) {
+            menu.add(Menu.NONE, BY_LOUDSPEAKER_ID, Menu.FIRST + 2, R.string.by_loudspeaker).setIcon(R.drawable.ic_menu_loud_speaker);
+        } else {
+            menu.add(Menu.NONE, BY_HEADSET_ID, Menu.FIRST + 2, R.string.by_headset).setIcon(R.drawable.ic_menu_header);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (mService == null) {
+            return false;
+        }
+        switch (item.getItemId()) {
+            case SAVE_ID:
+                saveChannel(getIndexOfEmptyItem());
+                break;
+            case EDIT_ID:
+                editChannel(getSelectedPreset());
+                break;
+            case CLEAR_ID:
+                Intent clearIntent = new Intent(this, FMClearChannel.class);
+                startActivityForResult(clearIntent, CLEAR_CODE);
+                break;
+            case EXIT_ID:
+                Preferences.setEnabled(this, false);
+                finish();
+                break;
+            case SCAN_SAVE_ID:
+                if (isDBEmpty()) {
+                    startScanning();
+                } else {
+                    showDialog(DIALOG_IF_SCAN_NEXT);
                 }
-                count++;
-                cursor.moveToNext();
-            }
-            if (cursor.isAfterLast()) {
-                count = -1;
-            }
-            cursor.close();
+                break;
+            case BY_LOUDSPEAKER_ID:
+            case BY_HEADSET_ID:
+                int routing = item.getItemId() == BY_LOUDSPEAKER_ID
+                        ? FMRadioPlayerService.FM_ROUTING_SPEAKER
+                        : FMRadioPlayerService.FM_ROUTING_HEADSET;
+                try {
+                    mService.setAudioRouting(routing);
+                } catch (RemoteException e) {
+                    Log.e(TAG, "Setting audio routing failed", e);
+                }
+                break;
         }
 
-        return count;
+        return super.onOptionsItemSelected(item);
     }
 
-    private void handleSeekMsg(View v, boolean upward) {
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+        int pos = (int) info.id;
+
+        switch (item.getItemId()) {
+            case PLAY_MENU_ID:
+                playClickPreset(pos);
+                break;
+            case EDIT_MENU_ID:
+                editChannel(pos);
+                break;
+            case REPLACE_MENU_ID:
+                boolean hasRds = !TextUtils.isEmpty(mRdsStationName);
+                saveStationToDB(pos, mCurFreq, hasRds ? null : "", hasRds ? mRdsStationName : "");
+                updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+                break;
+            case CLEAR_MENU_ID:
+                saveStationToDB(pos, 0, "", "");
+                updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+                break;
+        }
+
+        return true;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case SAVE_CODE:
+                if (resultCode == RESULT_OK) {
+                    int id = data.getIntExtra(FMSaveChannel.EXTRA_PRESET_ID, 0);
+                    updatePresetSwitcher(id + 1);
+                    setSelectedPreset(id);
+                } else {
+                    updatePresetSwitcher();
+                }
+                break;
+            case EDIT_CODE:
+                break;
+            case CLEAR_CODE:
+                if (resultCode == RESULT_OK) {
+                    boolean clearedAll = data.getBooleanExtra(FMClearChannel.EXTRA_CLEARED_ALL, false);
+                    if (clearedAll) {
+                        Log.d(TAG, "Cleared all FM stations");
+                        Preferences.setScanned(this, false);
+                    }
+                    updatePresetSwitcher();
+                }
+                break;
+        }
+    }
+
+    @Override
+    public View makeView() {
+        ImageView i = new ImageView(this);
+        i.setScaleType(ScaleType.CENTER_INSIDE);
+        i.setLayoutParams(new ImageSwitcher.LayoutParams(-1, -1));
+        return i;
+    }
+
+    @Override
+    public void onClick(View view) {
+        int id = view.getId();
+
+        switch (id) {
+            case R.id.btn_seekbackward:
+            case R.id.btn_seekforward:
+                initiateSeek(view, id == R.id.btn_seekforward);
+                break;
+            case R.id.btn_reduce:
+            case R.id.btn_add:
+                enableUI(false);
+                displayRdsScrollText(false);
+                if (view.getId() == R.id.btn_reduce) {
+                    mCurFreq -= FMUtil.STEP;
+                    if (mCurFreq < FMUtil.MIN_FREQUENCY) {
+                        mCurFreq = FMUtil.MAX_FREQUENCY;
+                    }
+                } else {
+                    mCurFreq += FMUtil.STEP;
+                    if (mCurFreq > FMUtil.MAX_FREQUENCY) {
+                        mCurFreq = FMUtil.MIN_FREQUENCY;
+                    }
+                }
+                updateFrequency();
+                updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+                break;
+        }
+    }
+
+    @Override
+    public boolean onLongClick(View v) {
+        mLongPressedButton = v.getId();
+
+        switch (mLongPressedButton) {
+            case R.id.btn_seekbackward:
+            case R.id.btn_seekforward:
+                initiateSeek(v, mLongPressedButton == R.id.btn_seekforward);
+                return true;
+            case R.id.btn_reduce:
+            case R.id.btn_add:
+                initiateTune(v, mLongPressedButton == R.id.btn_add);
+                return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        if (event.getAction() != MotionEvent.ACTION_UP && event.getAction() != MotionEvent.ACTION_CANCEL) {
+            return false;
+        }
+        if (mLongPressedButton == 0) {
+            return false;
+        }
+
+        mLongPressedButton = 0;
+
+        switch (v.getId()) {
+            case R.id.btn_seekbackward:
+            case R.id.btn_seekforward:
+                if (mHandler.hasMessages(MSG_CONTINUE_SEEK)) {
+                    mHandler.removeMessages(MSG_CONTINUE_SEEK);
+                } else {
+                    if (mService != null) {
+                        try {
+                            mService.stopSeek();
+                        } catch (RemoteException e) {
+                            Log.e(TAG, "Could not stop seek", e);
+                        }
+                    }
+
+                    mCurFreq = mPreFreq;
+                    updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+                    enableUI(false);
+                    updateFrequency();
+                }
+                mHandler.sendEmptyMessageDelayed(MSG_STOP_SCAN_ANIMATION, SCAN_STOP_DELAY);
+                break;
+            case R.id.btn_reduce:
+            case R.id.btn_add:
+                mHandler.removeMessages(MSG_CONTINUE_TUNE);
+                enableUI(false);
+                updateFrequency();
+                break;
+        }
+
+        return true;
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
         mPreFreq = mCurFreq;
-        seekFMRadioStation(0, upward);
-        mScanBar.setBackgroundDrawable(mScanAnimation);
-        mScanAnimation.start();
-        enableActiveButton(v);
-        displayRdsScrollText(false);
+    }
+
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromTouch) {
+        if (fromTouch) {
+            int step = (progress / FMUtil.STEP) * FMUtil.STEP;
+            mCurFreq = RANGE_START + step;
+            Log.d(TAG, "Changed frequency via progress change, now " + mCurFreq);
+            if (mCurFreq < FMUtil.MIN_FREQUENCY) {
+                setProgress(FMUtil.MIN_FREQUENCY - RANGE_START);
+                mCurFreq = FMUtil.MIN_FREQUENCY;
+            } else if (mCurFreq > FMUtil.MAX_FREQUENCY) {
+                setProgress(RANGE);
+                mCurFreq = FMUtil.MAX_FREQUENCY;
+            }
+            updateFrequencyDisplay(mCurFreq, false);
+            updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+        }
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+        if (mCurFreq != mPreFreq) {
+            updateFrequency();
+        }
+    }
+
+    private void initUI() {
+        initImageSwitcher();
+        initSeekBar();
+        initButtons();
+        initListView();
+        enableUI(false);
     }
 
     private void initButtons() {
@@ -615,14 +887,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         });
     }
 
-    private void initResourceRefs() {
-        initImageSwitcher();
-        initSeekBar();
-        initButtons();
-        initListView();
-        enableUI(false);
-    }
-
     private void initSeekBar() {
         mSeekBar = (SeekBar) findViewById(R.id.seek);
         mSeekBar.setOnSeekBarChangeListener(this);
@@ -634,6 +898,104 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         mRdsMarqueeText = (MarqueeText) findViewById(R.id.rds_text);
         mRdsMarqueeText.setTextColor(Color.WHITE);
         mRdsMarqueeText.setTextSize(22);
+    }
+
+    private boolean bindToService() {
+        Log.v(TAG, "Binding to player service");
+        Intent i = new Intent(this, FMRadioPlayerService.class);
+        startService(i);
+        return bindService(i, mServConnection, 0);
+    }
+
+    private void unbindService() {
+        if (mService != null) {
+            try {
+                mService.unregisterCallbacks();
+            } catch (RemoteException e) {
+            }
+        }
+        if (mIsBound) {
+            unbindService(mServConnection);
+            mIsBound = false;
+        }
+        stopService(new Intent(this, FMRadioPlayerService.class));
+    }
+
+    private void initiateSeek(View v, boolean upward) {
+        mPreFreq = mCurFreq;
+        disableUIExceptButton(v);
+        displayRdsScrollText(false);
+        startSeek(0, upward);
+        mScanBar.setBackgroundDrawable(mScanAnimation);
+        mScanAnimation.start();
+    }
+
+    private void initiateTune(View v, boolean upward) {
+        disableUIExceptButton(v);
+        displayRdsScrollText(false);
+        Message msg = Message.obtain(mHandler,
+                MSG_CONTINUE_TUNE, upward ? 1 : 0, 0, null);
+        mHandler.sendMessage(msg);
+    }
+
+    private void displayRdsScrollText(boolean show) {
+        Log.v(TAG, "displayRdsScrollText(" + show + ")");
+        if (!show) {
+            mRdsStationName = null;
+            mRdsRadioText = null;
+            mRdsPTYValue = 0;
+        }
+        if (mSeekBar != null && mRdsMarqueeText != null) {
+            if (show) {
+                mSeekBar.setVisibility(View.GONE);
+                mRdsMarqueeText.setVisibility(View.VISIBLE);
+            } else {
+                mSeekBar.setVisibility(View.VISIBLE);
+                mRdsMarqueeText.setVisibility(View.GONE);
+            }
+        }
+    }
+
+    private void enableUI(boolean enabled) {
+        for (ImageButton button : mSeekButtons) {
+            button.setEnabled(enabled);
+        }
+        updateButtonDrawables();
+        if (mChannelList != null) {
+            mChannelList.setEnabled(enabled);
+        }
+    }
+
+    private void disableUIExceptButton(View v) {
+        long id = v.getId();
+        for (ImageButton button : mSeekButtons) {
+            button.setEnabled(button.getId() == id);
+        }
+        updateButtonDrawables();
+        mChannelList.setEnabled(false);
+    }
+
+    private void updateButtonDrawables() {
+        for (ImageButton button : mSeekButtons) {
+            boolean enabled = button.isEnabled();
+            int resId = 0;
+
+            switch (button.getId()) {
+                case R.id.btn_seekbackward:
+                    resId = enabled ? R.drawable.fm_autosearch_reduce_enable : R.drawable.fm_autosearch_reduce_disable;
+                    break;
+                case R.id.btn_reduce:
+                    resId = enabled ? R.drawable.fm_manualadjust_reduce_enable : R.drawable.fm_manualadjust_reduce_disable;
+                    break;
+                case R.id.btn_add:
+                    resId = enabled ? R.drawable.fm_manualadjust_plus_enable : R.drawable.fm_manualadjust_plus_disable;
+                    break;
+                case R.id.btn_seekforward:
+                    resId = enabled ? R.drawable.fm_autosearch_plus_enable : R.drawable.fm_autosearch_plus_disable;
+                    break;
+            }
+            button.setBackgroundResource(resId);
+        }
     }
 
     private void playClickPreset(int position) {
@@ -653,13 +1015,13 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 mCurFreq = frequency;
                 updateDisplayPanel(mCurFreq, true);
                 updatePresetSwitcher(position + 1);
-                setFMRadioFrequency();
+                updateFrequency();
             }
         }
         cursor.close();
     }
 
-    private void scanFMRadioStation() {
+    private void startScanning() {
         boolean scanning = false;
 
         if (mService != null) {
@@ -682,7 +1044,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         }
     }
 
-    private void seekFMRadioStation(int freq, boolean upward) {
+    private void startSeek(int freq, boolean upward) {
         displayRdsScrollText(false);
         if (mService != null) {
             try {
@@ -693,7 +1055,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         }
     }
 
-    private void setFMRadioFrequency() {
+    private void updateFrequency() {
         displayRdsScrollText(false);
         if (mService != null) {
             try {
@@ -784,6 +1146,45 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         return index >= 0;
     }
 
+    private void setSelectedPreset(int preset) {
+        mChannelList.setSelection(preset);
+        if (preset < 0) {
+            mChannelList.clearChoices();
+        } else {
+            mChannelList.setItemChecked(preset, true);
+        }
+    }
+
+    private int getSelectedPreset() {
+        int checked = mChannelList.getCheckedItemPosition();
+        if (checked == ListView.INVALID_POSITION) {
+            return -1;
+        }
+        return (int) mChannelList.getItemIdAtPosition(checked);
+    }
+
+    private int getIndexOfEmptyItem() {
+        Cursor cursor = getContentResolver().query(Channels.CONTENT_URI, FMUtil.PROJECTION, null, null, null);
+        int count = 0;
+
+        if (cursor != null) {
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                if (cursor.getInt(FMUtil.CHANNEL_COLUMN_FREQ) == 0) {
+                    break;
+                }
+                count++;
+                cursor.moveToNext();
+            }
+            if (cursor.isAfterLast()) {
+                count = -1;
+            }
+            cursor.close();
+        }
+
+        return count;
+    }
+
     public void clearDB() {
         for (int i = 0; i < PRESET_NUM; i++) {
             saveStationToDB(i, 0, "", "");
@@ -808,399 +1209,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         return empty;
     }
 
-    @Override
-    public View makeView() {
-        ImageView i = new ImageView(this);
-        i.setScaleType(ScaleType.CENTER_INSIDE);
-        i.setLayoutParams(new ImageSwitcher.LayoutParams(-1, -1));
-        return i;
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        switch (requestCode) {
-            case SAVE_CODE:
-                if (resultCode == RESULT_OK) {
-                    int id = data.getIntExtra(FMSaveChannel.EXTRA_PRESET_ID, 0);
-                    updatePresetSwitcher(id + 1);
-                    setSelectedPreset(id);
-                } else {
-                    updatePresetSwitcher();
-                }
-                break;
-            case EDIT_CODE:
-                break;
-            case CLEAR_CODE:
-                if (resultCode == RESULT_OK) {
-                    boolean clearedAll = data.getBooleanExtra(FMClearChannel.EXTRA_CLEARED_ALL, false);
-                    if (clearedAll) {
-                        Log.d(TAG, "Cleared all FM stations");
-                        Preferences.setScanned(this, false);
-                    }
-                    updatePresetSwitcher();
-                }
-                break;
-        }
-    }
-
-    @Override
-    public void onClick(View view) {
-        int id = view.getId();
-
-        switch (id) {
-            case R.id.btn_seekbackward:
-                handleSeekMsg(view, false);
-                enableUI(false);
-                break;
-            case R.id.btn_seekforward:
-                handleSeekMsg(view, true);
-                enableUI(false);
-                break;
-            case R.id.btn_reduce:
-            case R.id.btn_add:
-                enableUI(false);
-                displayRdsScrollText(false);
-                if (view.getId() == R.id.btn_reduce) {
-                    mCurFreq -= FMUtil.STEP;
-                    if (mCurFreq < FMUtil.MIN_FREQUENCY) {
-                        mCurFreq = FMUtil.MAX_FREQUENCY;
-                    }
-                } else {
-                    mCurFreq += FMUtil.STEP;
-                    if (mCurFreq > FMUtil.MAX_FREQUENCY) {
-                        mCurFreq = FMUtil.MIN_FREQUENCY;
-                    }
-                }
-                setFMRadioFrequency();
-                updateDisplayPanel(mCurFreq, updatePresetSwitcher());
-                break;
-        }
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        Log.d(TAG, "onConfigurationChanged()");
-        super.onConfigurationChanged(newConfig);
-
-        setContentView(R.layout.main);
-        initResourceRefs();
-        updateDisplayPanel(mCurFreq, updatePresetSwitcher());
-        enableUI(true);
-    }
-
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
-        int pos = (int) info.id;
-
-        switch (item.getItemId()) {
-            case PLAY_MENU_ID:
-                playClickPreset(pos);
-                break;
-            case EDIT_MENU_ID:
-                editChannel(pos);
-                break;
-            case REPLACE_MENU_ID:
-                boolean hasRds = !TextUtils.isEmpty(mRdsStationName);
-                saveStationToDB(pos, mCurFreq, hasRds ? null : "", hasRds ? mRdsStationName : "");
-                updateDisplayPanel(mCurFreq, updatePresetSwitcher());
-                break;
-            case CLEAR_MENU_ID:
-                saveStationToDB(pos, 0, "", "");
-                updateDisplayPanel(mCurFreq, updatePresetSwitcher());
-                break;
-        }
-
-        return true;
-    }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        Log.d(TAG, "onCreate()");
-        super.onCreate(savedInstanceState);
-
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        setContentView(R.layout.main);
-        setVolumeControlStream(AudioManager.STREAM_FM);
-
-        mAM = (AudioManager) getSystemService(AUDIO_SERVICE);
-        mCurFreq = Preferences.getLastFrequency(this);
-
-        initResourceRefs();
-        mIsBound = bindToService();
-
-        PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
-        mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, getClass().getName());
-        mWakeLock.setReferenceCounted(false);
-        updateDisplayPanel(mCurFreq, updatePresetSwitcher());
-    }
-
-    @Override
-    protected Dialog onCreateDialog(int id) {
-        switch (id) {
-            case DIALOG_SCAN_PROGRESS:
-                mProgressDialog = new ProgressDialog(this);
-                mProgressDialog.setTitle(getString(R.string.fmradio_scanning_title));
-                mProgressDialog.setMessage(getString(R.string.fmradio_scan_begin_msg));
-                mProgressDialog.setIndeterminate(false);
-                mProgressDialog.setCancelable(true);
-                mProgressDialog.setButton(getText(R.string.cancel), new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        mProgressDialog.cancel();
-                    }
-                });
-                mProgressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-                    public void onCancel(DialogInterface dialog) {
-                        Log.v(TAG, "Cancelling progress dialog");
-                        try {
-                            mService.stopScan();
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "Stopping scan failed", e);
-                        }
-                        mProgressDialog.dismiss();
-                        mProgressDialog = null;
-                        setSelectedPreset(-1);
-                        enableUI(true);
-                        mHandler.sendEmptyMessageDelayed(MSG_STOP_SCAN_ANIMATION, SCAN_STOP_DELAY);
-                    }
-                });
-                return mProgressDialog;
-            case DIALOG_IF_SCAN_FIRST:
-                return new AlertDialog.Builder(this)
-                        .setTitle(R.string.scan)
-                        .setMessage(R.string.fmradio_scan_confirm_msg)
-                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                scanFMRadioStation();
-                            }
-                        })
-                        .setNegativeButton(R.string.cancel, null)
-                        .create();
-            case DIALOG_IF_SCAN_NEXT:
-                return new AlertDialog.Builder(this)
-                        .setTitle(R.string.scan)
-                        .setMessage(R.string.fmradio_clear_confirm_msg)
-                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                clearDB();
-                                scanFMRadioStation();
-                            }
-                        })
-                        .setNegativeButton(R.string.cancel, null)
-                        .create();
-        }
-
-        return null;
-    }
-
-    @Override
-    protected void onDestroy() {
-        Log.d(TAG, "onDestroy()");
-        super.onDestroy();
-
-        unbindFMRadioService();
-        mService = null;
-        mWakeLock.release();
-        if (mProgressDialog != null) {
-            mProgressDialog.dismiss();
-        }
-    }
-
-    @Override
-    public boolean onLongClick(View v) {
-        mLongPressedButton = v.getId();
-        switch (mLongPressedButton) {
-            case R.id.btn_seekbackward:
-                Log.d(TAG, "Starting long press seek backward.");
-                handleSeekMsg(v, false);
-                return true;
-            case R.id.btn_reduce: {
-                enableActiveButton(v);
-                displayRdsScrollText(false);
-                Message msg = Message.obtain(mHandler, MSG_CONTINUE_TUNE, 0, 0, null);
-                mHandler.sendMessage(msg);
-                return true;
-            }
-            case R.id.btn_add: {
-                enableActiveButton(v);
-                displayRdsScrollText(false);
-                Message msg = Message.obtain(mHandler, MSG_CONTINUE_TUNE, 1, 0, null);
-                mHandler.sendMessage(msg);
-                return true;
-            }
-            case R.id.btn_seekforward:
-                Log.d(TAG, "Starting long press seek forward.");
-                handleSeekMsg(v, true);
-                return true;
-        }
-
-        return false;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (mService == null) {
-            return false;
-        }
-        switch (item.getItemId()) {
-            case SAVE_ID:
-                saveChannel(getIndexOfEmptyItem());
-                break;
-            case EDIT_ID:
-                editChannel(getSelectedPreset());
-                break;
-            case CLEAR_ID:
-                Intent clearIntent = new Intent(this, FMClearChannel.class);
-                startActivityForResult(clearIntent, CLEAR_CODE);
-                break;
-            case EXIT_ID:
-                Preferences.setEnabled(this, false);
-                finish();
-                break;
-            case SCAN_SAVE_ID:
-                if (isDBEmpty()) {
-                    scanFMRadioStation();
-                } else {
-                    showDialog(DIALOG_IF_SCAN_NEXT);
-                }
-                break;
-            case BY_LOUDSPEAKER_ID:
-            case BY_HEADSET_ID:
-                int routing = item.getItemId() == BY_LOUDSPEAKER_ID
-                        ? FMRadioPlayerService.FM_ROUTING_SPEAKER
-                        : FMRadioPlayerService.FM_ROUTING_HEADSET;
-                try {
-                    mService.setAudioRouting(routing);
-                } catch (RemoteException e) {
-                    Log.e(TAG, "Setting audio routing failed", e);
-                }
-                break;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    protected void onPause() {
-        Log.d(TAG, "onPause()");
-        super.onPause();
-
-        Preferences.setLastFrequency(this, mCurFreq);
-        Preferences.setLastChannel(this, getSelectedPreset());
-    }
-
-    @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
-        if (mService == null) {
-            return false;
-        }
-        super.onPrepareOptionsMenu(menu);
-
-        boolean fmRadioEnabled = Preferences.isEnabled(this);
-        boolean canEditPreset = getSelectedPreset() >= 0;
-
-        menu.clear();
-        menu.add(Menu.NONE, CLEAR_ID, Menu.FIRST + 1, R.string.clear_presets).setIcon(R.drawable.ic_menu_clear_channel);
-        menu.add(Menu.NONE, EXIT_ID, Menu.FIRST + 4, R.string.exit).setIcon(R.drawable.ic_menu_exit);
-        if (canEditPreset && fmRadioEnabled) {
-            menu.add(Menu.NONE, EDIT_ID, Menu.FIRST, R.string.edit_preset).setIcon(R.drawable.ic_menu_edit_preset);
-        } else if (!canEditPreset) {
-            menu.add(Menu.NONE, SAVE_ID, Menu.FIRST, R.string.save_preset).setIcon(R.drawable.ic_menu_save_channel);
-        }
-        if (fmRadioEnabled) {
-            menu.add(Menu.NONE, SCAN_SAVE_ID, Menu.FIRST + 3, R.string.scan).setIcon(R.drawable.ic_menu_save_channel);
-        }
-
-        int audioRouting = 0;
-        try {
-            audioRouting = mService.getAudioRouting();
-        } catch (RemoteException e) {
-            Log.e(TAG, "Getting audio routing failed", e);
-        }
-        if (audioRouting == FMRadioPlayerService.FM_ROUTING_HEADSET) {
-            menu.add(Menu.NONE, BY_LOUDSPEAKER_ID, Menu.FIRST + 2, R.string.by_loudspeaker).setIcon(R.drawable.ic_menu_loud_speaker);
-        } else {
-            menu.add(Menu.NONE, BY_HEADSET_ID, Menu.FIRST + 2, R.string.by_headset).setIcon(R.drawable.ic_menu_header);
-        }
-        return true;
-    }
-
-    @Override
-    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromTouch) {
-        if (fromTouch) {
-            int step = (progress / FMUtil.STEP) * FMUtil.STEP;
-            mCurFreq = RANGE_START + step;
-            Log.d(TAG, "Changed frequency via progress change, now " + mCurFreq);
-            if (mCurFreq < FMUtil.MIN_FREQUENCY) {
-                setProgress(FMUtil.MIN_FREQUENCY - RANGE_START);
-                mCurFreq = FMUtil.MIN_FREQUENCY;
-            } else if (mCurFreq > FMUtil.MAX_FREQUENCY) {
-                setProgress(RANGE);
-                mCurFreq = FMUtil.MAX_FREQUENCY;
-            }
-            updateFrequencyDisplay(mCurFreq, false);
-            updateDisplayPanel(mCurFreq, updatePresetSwitcher());
-        }
-    }
-
-    @Override
-    public void onStartTrackingTouch(SeekBar seekBar) {
-        mPreFreq = mCurFreq;
-    }
-
-    @Override
-    public void onStopTrackingTouch(SeekBar seekBar) {
-        if (mCurFreq != mPreFreq) {
-            setFMRadioFrequency();
-        }
-    }
-
-    @Override
-    public boolean onTouch(View v, MotionEvent event) {
-        if (event.getAction() != MotionEvent.ACTION_UP && event.getAction() != MotionEvent.ACTION_CANCEL) {
-            return false;
-        }
-        if (mLongPressedButton == 0) {
-            return false;
-        }
-
-        mLongPressedButton = 0;
-
-        switch (v.getId()) {
-            case R.id.btn_seekbackward:
-            case R.id.btn_seekforward:
-                if (mHandler.hasMessages(MSG_CONTINUE_SEEK)) {
-                    mHandler.removeMessages(MSG_CONTINUE_SEEK);
-                } else {
-                    if (mService != null) {
-                        try {
-                            mService.stopSeek();
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "Could not stop seek", e);
-                        }
-                    }
-
-                    mCurFreq = mPreFreq;
-                    updateDisplayPanel(mCurFreq, updatePresetSwitcher());
-                    enableUI(false);
-                    setFMRadioFrequency();
-                }
-                mHandler.sendEmptyMessageDelayed(MSG_STOP_SCAN_ANIMATION, SCAN_STOP_DELAY);
-                break;
-            case R.id.btn_reduce:
-            case R.id.btn_add:
-                mHandler.removeMessages(MSG_CONTINUE_TUNE);
-                enableUI(false);
-                setFMRadioFrequency();
-                break;
-        }
-
-        return true;
-    }
-
     private void saveStationToDB(int id, int freq, String name, String rdsName) {
         final Uri uri = Uri.withAppendedPath(Channels.CONTENT_URI, String.valueOf(id));
         ContentValues cv = new ContentValues();
@@ -1214,23 +1222,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         }
 
         getContentResolver().update(uri, cv, null, null);
-    }
-
-    private void setSelectedPreset(int preset) {
-        mChannelList.setSelection(preset);
-        if (preset < 0) {
-            mChannelList.clearChoices();
-        } else {
-            mChannelList.setItemChecked(preset, true);
-        }
-    }
-
-    private int getSelectedPreset() {
-        int checked = mChannelList.getCheckedItemPosition();
-        if (checked == ListView.INVALID_POSITION) {
-            return -1;
-        }
-        return (int) mChannelList.getItemIdAtPosition(checked);
     }
 
     private void saveChannel(int position) {
@@ -1312,7 +1303,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
         mHandler.sendEmptyMessageDelayed(MSG_STOP_SCAN_ANIMATION, SCAN_STOP_DELAY);
 
-        setFMRadioFrequency();
+        updateFrequency();
         setSelectedPreset(-1);
         mScannedStations = -1;
     }
