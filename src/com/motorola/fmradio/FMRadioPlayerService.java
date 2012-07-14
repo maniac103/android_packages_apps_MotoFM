@@ -147,7 +147,7 @@ public class FMRadioPlayerService extends Service {
                         notifyTuneResult(false);
                     } else if (mCallbacks != null) {
                         try {
-                            mCallbacks.onAbortComplete();
+                            mCallbacks.onAbortComplete(Integer.parseInt(value));
                         } catch (RemoteException e) {
                             Log.e(TAG, "Could not report abort complete", e);
                         }

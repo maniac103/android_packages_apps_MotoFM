@@ -8,7 +8,7 @@ interface IFMRadioPlayerServiceCallbacks {
     void onSeekFinished(boolean success, int newFrequency);
     void onScanUpdate(int newFrequency);
     void onScanFinished(boolean success, int newFrequency);
-    void onAbortComplete();
+    void onAbortComplete(int newFrequency);
     void onError();
     void onRdsDataChanged(int frequency, String stationName, String radioText, int pty);
     void onAudioModeChanged(boolean stereo);
