@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical"
+        android:layout_width="300sp"
+        android:layout_height="wrap_content">
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dip"
+            android:orientation="vertical">
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dip">
+
+            <TextView
+                    style="?android:attr/textAppearanceSmallInverse"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="8dip"
+                    android:text="@string/frequency" />
+
+            <TextView
+                    android:id="@+id/channel_frequency"
+                    style="?android:attr/textAppearanceSmallInverse"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <TextView
+                style="?android:attr/textAppearanceSmallInverse"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dip"
+                android:text="@string/select_ch" />
+
+        <Spinner
+                android:id="@+id/preset_spinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dip"
+                android:prompt="@string/select_ch" />
+
+        <TextView
+                style="?android:attr/textAppearanceSmallInverse"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dip"
+                android:text="@string/ch_name" />
+
+        <CheckBox android:id="@+id/use_rds_name"
+                  style="?android:attr/textAppearanceSmallInverse"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:text="@string/use_rds_name" />
+
+        <EditText
+                android:id="@+id/channel_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollHorizontally="true"
+                android:maxLength="40"
+                android:singleLine="true" />
+
+    </LinearLayout>
+
+</ScrollView>

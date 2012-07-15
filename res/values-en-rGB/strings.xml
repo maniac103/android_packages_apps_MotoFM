@@ -6,8 +6,7 @@
     <string name="close">Close</string>
     <string name="exit">Exit</string>
     <string name="select_ch">Select preset</string>
-    <string name="frequency">Frequency:</string>
-    <string name="frequency2">Frequency</string>
+    <string name="frequency">Frequency</string>
     <string name="ch_name">Name</string>
     <string name="fm">FM</string>
     <string name="mhz">MHz</string>

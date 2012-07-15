@@ -6,9 +6,9 @@
     <string name="close">Schließen</string>
     <string name="exit">Beenden</string>
     <string name="select_ch">Voreinstellung auswählen</string>
-    <string name="frequency">Frequenz:</string>
-    <string name="frequency2">Frequenz</string>
+    <string name="frequency">Frequenz</string>
     <string name="ch_name">Name</string>
+    <string name="use_rds_name">RDS-Name benutzen</string>
     <string name="fm">FM</string>
     <string name="mhz">MHz</string>
     <string name="preset">Voreinstellung</string>
@@ -25,6 +25,7 @@
     <string name="btn_save">Speichern</string>
     <string name="btn_discard">Verwerfen</string>
     <string name="btn_done">Fertig</string>
+    <string name="edit_preset_title">Voreinstellung %1$d bearbeiten</string>
     <string name="play_preset">Voreinstellung wiedergeben</string>
     <string name="edit_preset">Voreinstellung bearbeiten</string>
     <string name="replace_preset">Voreinstellung ersetzen</string>

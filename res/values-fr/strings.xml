@@ -6,8 +6,7 @@
     <string name="close">Fermer</string>
     <string name="exit">Quitter</string>
     <string name="select_ch">Sélectionner Station préréglée</string>
-    <string name="frequency">Fréquence :</string>
-    <string name="frequency2">Fréquence</string>
+    <string name="frequency">Fréquence</string>
     <string name="ch_name">Nom</string>
     <string name="fm">FM</string>
     <string name="mhz">MHz</string>

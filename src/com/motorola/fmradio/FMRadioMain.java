@@ -71,6 +71,10 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private static final int DIALOG_SAVE_CHANNEL = 3;
     private static final int DIALOG_EDIT_CHANNEL = 4;
 
+    private static final String ARG_FREQUENCY = "frequency";
+    private static final String ARG_PRESET = "preset";
+    private static final String ARG_NAME = "name";
+
     public static final int PLAY_MENU_ID = 1;
     public static final int EDIT_MENU_ID = 2;
     public static final int REPLACE_MENU_ID = 3;
@@ -84,9 +88,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     public static final int BY_LOUDSPEAKER_ID = 6;
     public static final int BY_HEADSET_ID = 7;
 
-    private static final int SAVE_CODE = 0;
-    private static final int EDIT_CODE = 1;
-    private static final int CLEAR_CODE = 2;
+    private static final int CLEAR_CODE = 0;
 
     private static final int MSG_POWERON_COMPLETE = 1;
     private static final int MSG_TUNE_FINISHED = 2;
@@ -470,8 +472,31 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     }
 
     @Override
-    protected Dialog onCreateDialog(int id) {
+    protected Dialog onCreateDialog(int id, Bundle args) {
         switch (id) {
+            case DIALOG_SAVE_CHANNEL: {
+                int frequency = args.getInt(ARG_FREQUENCY, FMUtil.MIN_FREQUENCY);
+                int preset = args.getInt(ARG_PRESET, 0);
+                String name = args.getString(ARG_NAME);
+
+                return new SaveChannelDialog(this, frequency, preset, name, new SaveChannelDialog.OnSaveListener() {
+                    @Override
+                    public void onPresetSaved(int id) {
+                        updatePresetSwitcher(id + 1);
+                        setSelectedPreset(id);
+                    }
+
+                    @Override
+                    public void onSaveCanceled() {
+                        updatePresetSwitcher();
+                    }
+                });
+            }
+            case DIALOG_EDIT_CHANNEL: {
+                int preset = args.getInt(ARG_PRESET, 0);
+
+                return new EditChannelDialog(this, preset);
+            }
             case DIALOG_SCAN_PROGRESS:
                 mProgressDialog = new ProgressDialog(this);
                 mProgressDialog.setTitle(getString(R.string.fmradio_scanning_title));
@@ -638,17 +663,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
-            case SAVE_CODE:
-                if (resultCode == RESULT_OK) {
-                    int id = data.getIntExtra(FMSaveChannel.EXTRA_PRESET_ID, 0);
-                    updatePresetSwitcher(id + 1);
-                    setSelectedPreset(id);
-                } else {
-                    updatePresetSwitcher();
-                }
-                break;
-            case EDIT_CODE:
-                break;
             case CLEAR_CODE:
                 if (resultCode == RESULT_OK) {
                     boolean clearedAll = data.getBooleanExtra(FMClearChannel.EXTRA_CLEARED_ALL, false);
@@ -1225,17 +1239,17 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     }
 
     private void saveChannel(int position) {
-        Intent saveIntent = new Intent(this, FMSaveChannel.class);
-        saveIntent.putExtra(FMSaveChannel.EXTRA_FREQUENCY, mCurFreq);
-        saveIntent.putExtra(FMSaveChannel.EXTRA_PRESET_ID, position);
-        saveIntent.putExtra(FMSaveChannel.EXTRA_RDS_NAME, mRdsStationName);
-        startActivityForResult(saveIntent, SAVE_CODE);
+        Bundle args = new Bundle();
+        args.putInt(ARG_FREQUENCY, mCurFreq);
+        args.putInt(ARG_PRESET, position);
+        args.putString(ARG_NAME, mRdsStationName);
+        showDialog(DIALOG_SAVE_CHANNEL, args);
     }
 
     private void editChannel(int position) {
-        Intent editIntent = new Intent(this, FMEditChannel.class);
-        editIntent.putExtra(FMEditChannel.EXTRA_PRESET, position);
-        startActivityForResult(editIntent, EDIT_CODE);
+        Bundle args = new Bundle();
+        args.putInt(ARG_PRESET, position);
+        showDialog(DIALOG_EDIT_CHANNEL, args);
     }
 
     private void handleRdsDataChanged() {
