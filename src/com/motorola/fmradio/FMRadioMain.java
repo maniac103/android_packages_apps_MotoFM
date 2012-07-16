@@ -1200,9 +1200,13 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     }
 
     public void clearDB() {
-        for (int i = 0; i < PRESET_NUM; i++) {
-            saveStationToDB(i, 0, "", "");
-        }
+        ContentValues cv = new ContentValues();
+
+        cv.put(Channels.FREQUENCY, 0);
+        cv.put(Channels.NAME, "");
+        cv.put(Channels.RDS_NAME, "");
+
+        getContentResolver().update(Channels.CONTENT_URI, cv, null, null);
     }
 
     public boolean isDBEmpty() {

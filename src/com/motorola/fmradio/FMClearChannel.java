@@ -136,13 +136,20 @@ public class FMClearChannel extends ListActivity implements View.OnClickListener
         cv.put(Channels.FREQUENCY, 0);
         cv.put(Channels.NAME, "");
 
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < mCount; i++) {
             if (checked.get(i + 1)) {
-                final Uri uri = Uri.withAppendedPath(Channels.CONTENT_URI, String.valueOf(i));
-                getContentResolver().update(uri, cv, null, null);
+                if (sb.length() > 0) {
+                    sb.append(" OR ");
+                }
+                sb.append(Channels.ID);
+                sb.append("=");
+                sb.append(i);
                 count++;
             }
         }
+
+        getContentResolver().update(Channels.CONTENT_URI, cv, sb.toString(), null);
 
         Intent result = new Intent();
         result.putExtra(EXTRA_CLEARED_ALL, count == mCount);
