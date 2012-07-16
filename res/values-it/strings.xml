@@ -1,27 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Radio FM</string>
-    <string name="ok">OK</string>
-    <string name="cancel">Annulla</string>
-    <string name="close">Chiudi</string>
     <string name="exit">Esci</string>
     <string name="select_ch">Seleziona stazione</string>
     <string name="frequency">Frequenza</string>
     <string name="ch_name">Nome</string>
-    <string name="fm">FM</string>
     <string name="mhz">MHz</string>
     <string name="preset">Stazione</string>
-    <string name="presets">Stazioni</string>
     <string name="empty">Vuoto</string>
-    <string name="save_as_preset">Salva come stazione</string>
     <string name="save_preset">Salva stazione</string>
     <string name="clear_presets">Cancella stazioni</string>
-    <string name="scaned">Trovate</string>
     <string name="scan">Ricerca</string>
     <string name="by_loudspeaker">Altoparlante</string>
     <string name="by_headset">Cuffie</string>
-    <string name="btn_save">Salva</string>
-    <string name="btn_discard">Ignora</string>
     <string name="play_preset">Riproduci stazione</string>
     <string name="edit_preset">Modifica stazione</string>
     <string name="replace_preset">Sostituisci stazione</string>
@@ -29,15 +20,12 @@
     <string name="clear">Cancella</string>
     <string name="select_all">Seleziona tutto</string>
     <string name="unselect_all">Deseleziona tutto</string>
-    <string name="select">Seleziona</string>
-    <string name="fmradio_scan_begin_msg">Cercati 0 canali.</string>
     <string name="fmradio_scan_confirm_msg">Cercare tutti i canali disponibili?</string>
     <string name="fmradio_clear_confirm_msg">Cancellare tutti i canali salvati prima di eseguire la ricerca?</string>
     <string name="fmradio_no_headset">"La radio FM richiede l'utilizzo di cuffie per funzionare. Collega le cuffie."</string>
     <string name="fmradio_airplane_mode_enabled">Per usare la radio FM, disattiva la Modalità aereo.</string>
     <string name="fmradio_music_playing_at_begin">"Per usare la radio FM, disattiva l'opzione Musica."</string>
     <string name="fmradio_music_playing_in_listen">Durante la riproduzione della musica, la radio FM si spegne automaticamente.</string>
-    <string name="fmradio_edit_failed_msg">Immetti un numero di frequenza compreso tra 87.5 MHz e 108.0 MHz.</string>
     <string name="fmradio_waiting_for_power_on">Caricamento radio FM in corso. Attendi.</string>
     <string name="service_start_error_title">Avvio servizio radio FM non riuscito</string>
     <string name="service_start_error_msg">"Si è verificato un problema con la radio FM e l'applicazione verrà chiusa. Riprova ad avviare la radio FM."</string>

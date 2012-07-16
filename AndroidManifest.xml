@@ -1,28 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest android:versionCode="7" android:versionName="2.1-update1" package="com.motorola.fmradio"
-  xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+        android:versionCode="7"
+        android:versionName="2.1-update1"
+        package="com.motorola.fmradio">
+
     <uses-sdk android:minSdkVersion="7" android:targetSdkVersion="7" />
     <uses-permission android:name="com.motorola.android.permission.USEFMRADIO" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.BROADCAST_STICKY" />
-    <supports-screens android:anyDensity="false" android:smallScreens="false" android:normalScreens="true" android:largeScreens="true" />
-    <application android:label="@string/app_name" android:icon="@drawable/fm_radio_icon">
-        <provider android:name="FMDataProvider" android:authorities="com.motorola.provider.fmradio" />
-        <activity android:theme="@style/Theme.noTitle" android:label="@string/app_name" android:name=".FMRadioMain" android:configChanges="orientation">
+
+    <supports-screens
+            android:anyDensity="false"
+            android:smallScreens="false"
+            android:normalScreens="true"
+            android:largeScreens="true" />
+
+    <application
+            android:label="@string/app_name"
+            android:icon="@drawable/fm_radio_icon">
+
+        <provider
+                android:name="FMDataProvider"
+                android:authorities="com.motorola.provider.fmradio" />
+
+        <activity
+                android:theme="@style/Theme.noTitle"
+                android:label="@string/app_name"
+                android:name=".FMRadioMain"
+                android:configChanges="orientation">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
-        <activity android:label="FMSaveChannel" android:name=".FMSaveChannel" android:configChanges="orientation" />
-        <activity android:label="FMEditChannel" android:name=".FMEditChannel" android:configChanges="orientation" />
-        <activity android:label="FMClearChannel" android:name=".FMClearChannel" />
-        <service android:name="FMRadioPlayerService" android:process=":remote">
+
+        <activity
+                android:label="FMClearChannel"
+                android:name=".FMClearChannel" />
+
+        <service
+                android:name="FMRadioPlayerService"
+                android:process=":remote">
+
             <intent-filter>
                 <action android:name="com.motorola.fmradio.FMRADIO_SERVICE" />
             </intent-filter>
+
         </service>
+
     </application>
+
 </manifest>

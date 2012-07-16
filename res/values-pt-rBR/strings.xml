@@ -1,27 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Rádio FM</string>
-    <string name="ok">OK</string>
-    <string name="cancel">Cancelar</string>
-    <string name="close">Fechar</string>
     <string name="exit">Sair</string>
     <string name="select_ch">Selecionar pré definida</string>
     <string name="frequency">Frequência</string>
     <string name="ch_name">Nome</string>
-    <string name="fm">FM</string>
     <string name="mhz">MHz</string>
     <string name="preset">Pré definida</string>
-    <string name="presets">Pré definidas</string>
     <string name="empty">Vazia</string>
-    <string name="save_as_preset">Salvar como pré definida</string>
     <string name="save_preset">Salvar pré definida</string>
     <string name="clear_presets">Fechar pré definidas</string>
-    <string name="scaned">Procuradas</string>
     <string name="scan">Procurar</string>
     <string name="by_loudspeaker">Alto-falante</string>
     <string name="by_headset">Fones de ouvido</string>
-    <string name="btn_save">Salvar</string>
-    <string name="btn_discard">Descartar</string>
     <string name="play_preset">Reproduzir pré definida</string>
     <string name="edit_preset">Editar pré definida</string>
     <string name="replace_preset">Substituir pré definida</string>
@@ -29,8 +20,6 @@
     <string name="clear">Apagar</string>
     <string name="select_all">Marcar todas</string>
     <string name="unselect_all">Desmarcar todas</string>
-    <string name="select">Selecionar</string>
-    <string name="fmradio_scan_begin_msg">Procurou 0 estações.</string>
     <string name="fmradio_scan_confirm_msg">Deseja procurar todas as estações disponíveis?</string>
     <string name="fmradio_clear_confirm_msg">Deseja apagar todas as estações salvas antes de procurar?</string>
     <string name="fmradio_no_headset">Rádio FM requer um fone de ouvido para funcionar. Por favor, conecte um fone de ouvido.</string>

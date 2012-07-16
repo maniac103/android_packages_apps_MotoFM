@@ -46,8 +46,8 @@ public class EditChannelDialog extends AlertDialog
         mUseRdsName.setOnCheckedChangeListener(this);
         mNameField = (EditText) view.findViewById(R.id.channel_name);
 
-        setButton(DialogInterface.BUTTON_POSITIVE, context.getString(R.string.ok), this);
-        setButton(DialogInterface.BUTTON_NEGATIVE, context.getString(R.string.cancel), this);
+        setButton(DialogInterface.BUTTON_POSITIVE, context.getString(android.R.string.ok), this);
+        setButton(DialogInterface.BUTTON_NEGATIVE, context.getString(android.R.string.cancel), this);
 
         initData();
 

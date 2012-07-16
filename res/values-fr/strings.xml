@@ -1,27 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Radio FM</string>
-    <string name="ok">OK</string>
-    <string name="cancel">Annuler</string>
-    <string name="close">Fermer</string>
     <string name="exit">Quitter</string>
     <string name="select_ch">Sélectionner Station préréglée</string>
     <string name="frequency">Fréquence</string>
     <string name="ch_name">Nom</string>
-    <string name="fm">FM</string>
     <string name="mhz">MHz</string>
     <string name="preset">Station préréglée</string>
-    <string name="presets">Stations préréglées</string>
     <string name="empty">Vide</string>
-    <string name="save_as_preset">Enregistrer comme préréglée</string>
     <string name="save_preset">Enregistrer station préréglée</string>
     <string name="clear_presets">Effacer stations prérégl.</string>
-    <string name="scaned">Recherche effectuée</string>
     <string name="scan">Rechercher</string>
     <string name="by_loudspeaker">Haut-parleur</string>
     <string name="by_headset">Casque</string>
-    <string name="btn_save">Enregistrer</string>
-    <string name="btn_discard">Ignorer</string>
     <string name="play_preset">Lire station préréglée</string>
     <string name="edit_preset">Modifier station préréglée</string>
     <string name="replace_preset">Remplacer station préréglée</string>
@@ -29,8 +20,6 @@
     <string name="clear">Effacer</string>
     <string name="select_all">Sélectionner tout</string>
     <string name="unselect_all">Désélectionner tout</string>
-    <string name="select">Sélectionner</string>
-    <string name="fmradio_scan_begin_msg">0 station trouvée.</string>
     <string name="fmradio_scan_confirm_msg">Souhaitez-vous rechercher toutes les stations disponibles ?</string>
     <string name="fmradio_clear_confirm_msg">"Souhaitez-vous effacer toutes les stations enregistrées avant d'effectuer une recherche ?"</string>
     <string name="fmradio_no_headset">"L'utilisation de la radio FM nécessite un casque. Veuillez en brancher un."</string>
