@@ -508,7 +508,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 mProgressDialog.setButton(getString(android.R.string.cancel), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int whichButton) {
-                        mProgressDialog.cancel();
+                        dialog.cancel();
                     }
                 });
                 mProgressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
