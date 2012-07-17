@@ -64,7 +64,8 @@ public class FMRadioPlayerService extends Service {
     private static final int MSG_RDS_PS_UPDATE = 6;
     private static final int MSG_RDS_RT_UPDATE = 7;
     private static final int MSG_RDS_PTY_UPDATE = 8;
-    private static final int MSG_SHUTDOWN = 9;
+    private static final int MSG_RESTORE_AUDIO_AFTER_CALL = 9;
+    private static final int MSG_SHUTDOWN = 10;
 
     private IFMRadioService mIFMRadioService = null;
     private IFMRadioPlayerServiceCallbacks mCallbacks = null;
@@ -470,6 +471,13 @@ public class FMRadioPlayerService extends Service {
                         notifyRdsUpdate();
                     }
                     break;
+                case MSG_RESTORE_AUDIO_AFTER_CALL:
+                    setFMMuteState(false);
+                    audioPrepare(mAudioRouting == FM_ROUTING_HEADSET
+                            ? FM_ROUTING_SPEAKER : FM_ROUTING_HEADSET);
+                    audioPrepare(mAudioRouting);
+                    setFMVolume(Preferences.getVolume(FMRadioPlayerService.this));
+                    break;
                 case MSG_SHUTDOWN:
                     Log.d(TAG, "Shutting down FM radio player service");
                     notifyEnableChangeComplete(false, true);
@@ -549,22 +557,9 @@ public class FMRadioPlayerService extends Service {
                     String phoneState = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
                     Log.d(TAG, "Got phone state change, new state " + phoneState);
                     if (phoneState.equals(TelephonyManager.EXTRA_STATE_IDLE)) {
-                        try {
-                            Thread.sleep(3000);
-                        } catch (InterruptedException e) {
-                            Log.w(TAG, "Waiting for route change failed", e);
-                        }
-                        if (mAudioRouting == FM_ROUTING_HEADSET) {
-                            audioPrepare(FM_ROUTING_SPEAKER);
-                            audioPrepare(FM_ROUTING_HEADSET);
-                        } else {
-                            audioPrepare(FM_ROUTING_HEADSET);
-                            audioPrepare(FM_ROUTING_SPEAKER);
-                        }
-                        setFMMuteState(false);
-                        audioPrepare(mAudioRouting);
-                        setFMVolume(Preferences.getVolume(FMRadioPlayerService.this));
+                        mHandler.sendEmptyMessageDelayed(MSG_RESTORE_AUDIO_AFTER_CALL, 3000);
                     } else {
+                        mHandler.removeMessages(MSG_RESTORE_AUDIO_AFTER_CALL);
                         setFMMuteState(true);
                     }
                 } else if (action.equals(AudioManager.VOLUME_CHANGED_ACTION)) {
