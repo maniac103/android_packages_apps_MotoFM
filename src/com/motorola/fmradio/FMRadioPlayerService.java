@@ -59,13 +59,15 @@ public class FMRadioPlayerService extends Service {
     private static final int MSG_SEEK_CHANNEL = 1;
     private static final int MSG_SHOW_NOTICE = 2;
     private static final int MSG_TUNE_COMPLETE = 3;
-    private static final int MSG_SEEK_COMPLETE = 4;
-    private static final int MSG_UPDATE_AUDIOMODE = 5;
-    private static final int MSG_RDS_PS_UPDATE = 6;
-    private static final int MSG_RDS_RT_UPDATE = 7;
-    private static final int MSG_RDS_PTY_UPDATE = 8;
-    private static final int MSG_RESTORE_AUDIO_AFTER_CALL = 9;
-    private static final int MSG_SHUTDOWN = 10;
+    private static final int MSG_SCAN_UPDATE = 4;
+    private static final int MSG_SEEK_COMPLETE = 5;
+    private static final int MSG_SCAN_COMPLETE = 6;
+    private static final int MSG_UPDATE_AUDIOMODE = 7;
+    private static final int MSG_RDS_PS_UPDATE = 8;
+    private static final int MSG_RDS_RT_UPDATE = 9;
+    private static final int MSG_RDS_PTY_UPDATE = 10;
+    private static final int MSG_RESTORE_AUDIO_AFTER_CALL = 11;
+    private static final int MSG_SHUTDOWN = 12;
 
     private IFMRadioService mIFMRadioService = null;
     private IFMRadioPlayerServiceCallbacks mCallbacks = null;
@@ -131,18 +133,11 @@ public class FMRadioPlayerService extends Service {
                     mHandler.sendMessage(msg);
                     break;
                 }
-                case 2:
-                    if (status != 0) {
-                        resetRDSData();
-                    }
-                    if (mCallbacks != null) {
-                        try {
-                            mCallbacks.onScanFinished(status != 0, Integer.parseInt(value));
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "Could not report scan result", e);
-                        }
-                    }
+                case 2: {
+                    Message msg = Message.obtain(mHandler, MSG_SCAN_COMPLETE, status, 0, null);
+                    mHandler.sendMessage(msg);
                     break;
+                }
                 case 3:
                     if (status == 0) {
                         notifyTuneResult(false);
@@ -234,15 +229,11 @@ public class FMRadioPlayerService extends Service {
                     mHandler.sendMessage(msg);
                     break;
                 }
-                case 25:
-                    if (mCallbacks != null) {
-                        try {
-                            mCallbacks.onScanUpdate(Integer.parseInt(value));
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "Could not report scan update", e);
-                        }
-                    }
+                case 25: {
+                    Message msg = Message.obtain(mHandler, MSG_SCAN_UPDATE, Integer.parseInt(value), 0, null);
+                    mHandler.sendMessage(msg);
                     break;
+                }
                 case 11:
                 case 12:
                 case 13:
@@ -429,6 +420,28 @@ public class FMRadioPlayerService extends Service {
                     break;
                 case MSG_TUNE_COMPLETE:
                     handleTuneComplete(msg.arg1 != 0, msg.arg2);
+                    break;
+                case MSG_SCAN_UPDATE:
+                    mCurFreq = msg.arg1;
+                    if (mCallbacks != null) {
+                        try {
+                            mCallbacks.onScanUpdate(mCurFreq);
+                        } catch (RemoteException e) {
+                            Log.e(TAG, "Could not report scan update", e);
+                        }
+                    }
+                    break;
+                case MSG_SCAN_COMPLETE:
+                    if (msg.arg1 != 0) {
+                        resetRDSData();
+                    }
+                    if (mCallbacks != null) {
+                        try {
+                            mCallbacks.onScanFinished(msg.arg1 != 0, mCurFreq);
+                        } catch (RemoteException e) {
+                            Log.e(TAG, "Could not report scan result", e);
+                        }
+                    }
                     break;
                 case MSG_SEEK_COMPLETE:
                     int preFreq = mCurFreq;
