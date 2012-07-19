@@ -8,8 +8,6 @@ LOCAL_SRC_FILES := $(call all-subdir-java-files) \
 	src/com/motorola/fmradio/IFMRadioPlayerService.aidl \
 	src/com/motorola/fmradio/IFMRadioPlayerServiceCallbacks.aidl \
 
-LOCAL_PACKAGE_NAME := FMRadio
-
-LOCAL_CERTIFICATE := platform
+LOCAL_PACKAGE_NAME := MotoFM
 
 include $(BUILD_PACKAGE)
