@@ -121,7 +121,10 @@ public class FMRadioPlayerService extends Service {
     protected IFMRadioServiceCallback mCallback = new IFMRadioServiceCallback.Stub() {
         @Override
         public void onCommandComplete(int cmd, int status, String value) throws RemoteException {
+            final Context context = FMRadioPlayerService.this;
+
             Log.v(TAG, "Got radio service event: cmd " + cmd + " status " + status + " value " + value);
+
             switch (cmd) {
                 case 0: {
                     Message msg = Message.obtain(mHandler, MSG_TUNE_COMPLETE, status, Integer.parseInt(value), null);
@@ -188,18 +191,7 @@ public class FMRadioPlayerService extends Service {
                     Message msg = Message.obtain(mHandler, MSG_UPDATE_AUDIOMODE, Integer.parseInt(value), 0, null);
                     mHandler.sendMessage(msg);
 
-                    boolean success = true;
-                    if (!mReady) {
-                        try {
-                            /* TODO: add option for defining 'seek signal threshold' ... 12 is the default
-                             */
-                            success = mIFMRadioService.setRSSI(12);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "Could not set RSSI", e);
-                            success = false;
-                        }
-                    }
-                    if (success) {
+                    if (mReady || setSeekSensitivity(Preferences.getSeekSensitivityThreshold(context))) {
                         break;
                     }
                     /* otherwise fall-through intended, failure to set RSSI is non-fatal */
@@ -285,7 +277,7 @@ public class FMRadioPlayerService extends Service {
                 return true;
             }
 
-            if (isAirplaneModeOn()) {
+            if (isAirplaneModeOn() && !Preferences.isAirplaneModeIgnored(FMRadioPlayerService.this)) {
                 Message msg = Message.obtain(mHandler, MSG_SHOW_NOTICE,
                         R.string.fmradio_airplane_mode_enabled, 0, null);
                 mHandler.sendMessage(msg);
@@ -551,7 +543,7 @@ public class FMRadioPlayerService extends Service {
                 } else if (action.equals(Intent.ACTION_AIRPLANE_MODE_CHANGED)) {
                     int state = intent.getIntExtra("state", 0);
                     Log.v(TAG, "Got airplane mode change message, new state " + state);
-                    if (state != 0) {
+                    if (state != 0 && !Preferences.isAirplaneModeIgnored(context)) {
                         FMUtil.showNoticeDialog(context, R.string.fmradio_airplane_mode_enabled);
                         mHandler.sendEmptyMessage(MSG_SHUTDOWN);
                     }
@@ -582,6 +574,8 @@ public class FMRadioPlayerService extends Service {
                         Preferences.setVolume(FMRadioPlayerService.this, volume);
                         setFMVolume(volume);
                     }
+                } else if (mReady && action.equals(SettingsActivity.ACTION_RSSI_UPDATED)) {
+                    setSeekSensitivity(intent.getIntExtra(SettingsActivity.EXTRA_RSSI, -1));
                 }
             }
         };
@@ -595,6 +589,7 @@ public class FMRadioPlayerService extends Service {
         filter.addAction(ACTION_AUDIOPATH_BUSY);
         filter.addAction(ACTION_MUSIC_PLAYSTATE_CHANGED);
         filter.addAction(Intent.ACTION_HEADSET_PLUG);
+        filter.addAction(SettingsActivity.ACTION_RSSI_UPDATED);
         registerReceiver(mReceiver, filter);
     }
 
@@ -856,5 +851,18 @@ public class FMRadioPlayerService extends Service {
         }
 
         return result;
+    }
+
+    private boolean setSeekSensitivity(int value) {
+        if (value < 0) {
+            return false;
+        }
+        Log.d(TAG, "Setting RSSI level " + value);
+        try {
+            return mIFMRadioService.setRSSI(value);
+        } catch (RemoteException e) {
+            Log.e(TAG, "Could not set RSSI", e);
+        }
+        return false;
     }
 }

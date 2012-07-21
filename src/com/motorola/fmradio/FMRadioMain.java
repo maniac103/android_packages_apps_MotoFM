@@ -85,10 +85,11 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     public static final int SAVE_ID = 1;
     public static final int EDIT_ID = 2;
     public static final int CLEAR_ID = 3;
-    public static final int EXIT_ID = 4;
-    public static final int SCAN_SAVE_ID = 5;
-    public static final int BY_LOUDSPEAKER_ID = 6;
-    public static final int BY_HEADSET_ID = 7;
+    public static final int PREFS_ID = 4;
+    public static final int EXIT_ID = 5;
+    public static final int SCAN_SAVE_ID = 6;
+    public static final int BY_LOUDSPEAKER_ID = 7;
+    public static final int BY_HEADSET_ID = 8;
 
     private static final int CLEAR_CODE = 0;
 
@@ -569,7 +570,8 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
         menu.clear();
         menu.add(Menu.NONE, CLEAR_ID, Menu.FIRST + 1, R.string.clear_presets).setIcon(R.drawable.ic_menu_clear_channel);
-        menu.add(Menu.NONE, EXIT_ID, Menu.FIRST + 4, R.string.exit).setIcon(R.drawable.ic_menu_exit);
+        menu.add(Menu.NONE, PREFS_ID, Menu.FIRST + 4, R.string.settings_title).setIcon(android.R.drawable.ic_menu_preferences);
+        menu.add(Menu.NONE, EXIT_ID, Menu.FIRST + 5, R.string.exit).setIcon(R.drawable.ic_menu_exit);
         if (canEditPreset && fmRadioEnabled) {
             menu.add(Menu.NONE, EDIT_ID, Menu.FIRST, R.string.edit_preset).setIcon(R.drawable.ic_menu_edit_preset);
         } else if (!canEditPreset) {
@@ -612,6 +614,9 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
             case EXIT_ID:
                 Preferences.setEnabled(this, false);
                 finish();
+                break;
+            case PREFS_ID:
+                startActivity(new Intent(this, SettingsActivity.class));
                 break;
             case SCAN_SAVE_ID:
                 if (isDBEmpty()) {

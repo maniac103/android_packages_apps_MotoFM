@@ -101,4 +101,22 @@
     <string name="fm_pty_list_61">Wetter</string>
     <string name="fm_pty_list_62">Notfall-Test</string>
     <string name="fm_pty_list_63">Notfall</string>
+
+    <string name="settings_title">Einstellungen</string>
+    <string name="general_settings_title">Allgemein</string>
+    <string name="ignore_airplane_title">Flugmodus ignorieren</string>
+    <string name="ignore_airplane_summary">Benutzung des FM-Radios auch im Flugmodus erlauben</string>
+    <string name="tuning_settings_title">Sendersuche</string>
+    <string name="seek_sensitivity_title">Empfindlichkeit</string>
+    <string name="seek_sensitivity_summary">Minimalen Signalpegel einstellen, der benötigt wird, um einen Sender bei der Suche zu finden</string>
+    <string name="seek_sensitivity_entry_verystrong">Sehr stark</string>
+    <string name="seek_sensitivity_entry_strong">Stark</string>
+    <string name="seek_sensitivity_entry_medium">Mittel</string>
+    <string name="seek_sensitivity_entry_weak">Schwach</string>
+    <string name="seek_sensitivity_entry_veryweak">Sehr schwach</string>
+
+    <string name="warning">Warnung</string>
+    <string name="airplane_ignore_warning_message">Das FM-Radio benutzt intern die Bluetooth-Hardware des Telefons, deren Benutzung unter Umständen, z.B. im Flugzeug, illegal sein kann.\nMöchten Sie die Benutzung des FM-Radios im Flugmodus wirklich erlauben?</string>
+    <string name="yes">Ja</string>
+    <string name="no">Nein</string>
 </resources>

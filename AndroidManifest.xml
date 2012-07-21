@@ -42,6 +42,10 @@
                 android:label="FMClearChannel"
                 android:name=".FMClearChannel" />
 
+        <activity
+                android:label="@string/settings_title"
+                android:name=".SettingsActivity" />
+
         <service
                 android:name="FMRadioPlayerService"
                 android:process=":remote">
