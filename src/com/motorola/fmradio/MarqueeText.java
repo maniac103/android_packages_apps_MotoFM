@@ -134,10 +134,11 @@ public class MarqueeText extends View {
     }
 
     @Override
-    protected boolean setFrame(int left, int top, int right, int bottom) {
-        boolean result = super.setFrame(left, top, right, bottom);
-        marqueeStart();
-        return result;
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        if (changed) {
+            marqueeStart();
+        }
     }
 
     @Override
