@@ -590,7 +590,11 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         if (audioRouting == FMRadioPlayerService.FM_ROUTING_HEADSET) {
             menu.add(Menu.NONE, BY_LOUDSPEAKER_ID, Menu.FIRST + 2, R.string.by_loudspeaker).setIcon(R.drawable.ic_menu_loud_speaker);
         } else {
-            menu.add(Menu.NONE, BY_HEADSET_ID, Menu.FIRST + 2, R.string.by_headset).setIcon(R.drawable.ic_menu_header);
+            MenuItem headsetItem = menu.add(Menu.NONE, BY_HEADSET_ID, Menu.FIRST + 2, R.string.by_headset);
+            headsetItem.setIcon(R.drawable.ic_menu_header);
+            if (audioRouting == FMRadioPlayerService.FM_ROUTING_SPEAKER_ONLY) {
+                headsetItem.setEnabled(false);
+            }
         }
         return true;
     }

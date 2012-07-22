@@ -9,6 +9,11 @@
                             android:title="@string/ignore_airplane_title"
                             android:summary="@string/ignore_airplane_summary" />
 
+        <CheckBoxPreference android:key="ignore_no_headset"
+                            android:defaultValue="false"
+                            android:title="@string/ignore_no_headset_title"
+                            android:summary="@string/ignore_no_headset_summary" />
+
     </PreferenceCategory>
 
     <PreferenceCategory android:key="tuning"

@@ -13,7 +13,7 @@ interface IFMRadioPlayerService {
     boolean scan();
     boolean stopScan();
 
-    boolean setAudioRouting(int mode);
+    void setAudioRouting(int mode);
     int getAudioRouting();
 
     void registerCallbacks(IFMRadioPlayerServiceCallbacks cb);

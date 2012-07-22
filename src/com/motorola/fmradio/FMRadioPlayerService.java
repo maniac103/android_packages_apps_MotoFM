@@ -43,6 +43,7 @@ public class FMRadioPlayerService extends Service {
 
     public static int FM_ROUTING_HEADSET = 0;
     public static int FM_ROUTING_SPEAKER = 1;
+    public static int FM_ROUTING_SPEAKER_ONLY = 2;
 
     private static final String ROUTING_KEY = "FM_routing";
     private static final String ROUTING_VALUE_HEADSET = "DEVICE_OUT_WIRED_HEADPHONE";
@@ -67,7 +68,8 @@ public class FMRadioPlayerService extends Service {
     private static final int MSG_RDS_RT_UPDATE = 9;
     private static final int MSG_RDS_PTY_UPDATE = 10;
     private static final int MSG_RESTORE_AUDIO_AFTER_CALL = 11;
-    private static final int MSG_SHUTDOWN = 12;
+    private static final int MSG_SET_ROUTING = 12;
+    private static final int MSG_SHUTDOWN = 13;
 
     private IFMRadioService mIFMRadioService = null;
     private IFMRadioPlayerServiceCallbacks mCallbacks = null;
@@ -261,6 +263,9 @@ public class FMRadioPlayerService extends Service {
 
         @Override
         public int getAudioRouting() {
+            if (!isHeadsetConnected() && mAudioRouting == FM_ROUTING_SPEAKER) {
+                return FM_ROUTING_SPEAKER_ONLY;
+            }
             return mAudioRouting;
         }
 
@@ -286,9 +291,9 @@ public class FMRadioPlayerService extends Service {
             }
 
             Intent headsetIntent = registerReceiver(null, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
-            handleHeadsetChange(headsetIntent != null ? headsetIntent.getIntExtra("state", 0) : -1);
+            int headsetState = headsetIntent != null ? headsetIntent.getIntExtra("state", 0) : -1;
 
-            if (!isHeadsetConnected()) {
+            if (!handleHeadsetChange(headsetState)) {
                 return false;
             }
 
@@ -342,13 +347,10 @@ public class FMRadioPlayerService extends Service {
         }
 
         @Override
-        public boolean setAudioRouting(int routing) {
+        public void setAudioRouting(int routing) {
             Log.d(TAG, "Got request for setting audio routing to " + routing);
-            if (mReady) {
-                mAudioRouting = routing;
-                audioPrepare(routing);
-            }
-            return mReady;
+            Message msg = Message.obtain(mHandler, MSG_SET_ROUTING, routing, 0, null);
+            mHandler.sendMessage(msg);
         }
 
         @Override
@@ -482,6 +484,14 @@ public class FMRadioPlayerService extends Service {
                             ? FM_ROUTING_SPEAKER : FM_ROUTING_HEADSET);
                     audioPrepare(mAudioRouting);
                     setFMVolume(Preferences.getVolume(FMRadioPlayerService.this));
+                    break;
+                case MSG_SET_ROUTING:
+                    if (msg.arg1 == FM_ROUTING_HEADSET || msg.arg1 == FM_ROUTING_SPEAKER) {
+                        mAudioRouting = msg.arg1;
+                        if (mReady) {
+                            audioPrepare(mAudioRouting);
+                        }
+                    }
                     break;
                 case MSG_SHUTDOWN:
                     Log.d(TAG, "Shutting down FM radio player service");
@@ -740,7 +750,7 @@ public class FMRadioPlayerService extends Service {
         return mHeadsetState == STEREO_HEADSET || mHeadsetState == STEREO_HEADSET2 || mHeadsetState == OMTP_HEADSET;
     }
 
-    private void handleHeadsetChange(int state) {
+    private boolean handleHeadsetChange(int state) {
         mHeadsetState = state;
         boolean available = isHeadsetConnected();
 
@@ -751,11 +761,17 @@ public class FMRadioPlayerService extends Service {
                 i.putExtra(MUSIC_EXTRA_COMMAND, MUSIC_PAUSE);
                 sendBroadcast(i);
             }
-        } else {
+        } else if (Preferences.isHeadsetRequired(this)) {
             Message msg = Message.obtain(mHandler, MSG_SHOW_NOTICE, R.string.fmradio_no_headset, 0, null);
             mHandler.sendMessage(msg);
             mHandler.sendEmptyMessage(MSG_SHUTDOWN);
+            return false;
+        } else {
+            Message msg = Message.obtain(mHandler, MSG_SET_ROUTING, FM_ROUTING_SPEAKER, 0, null);
+            mHandler.sendMessage(msg);
         }
+
+        return true;
     }
 
     private void notifyEnableChangeComplete(boolean enabled, boolean success) {

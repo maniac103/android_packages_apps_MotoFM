@@ -17,6 +17,7 @@ public class SettingsActivity extends PreferenceActivity implements OnPreference
     public static final String EXTRA_RSSI = "rssi";
 
     private CheckBoxPreference mIgnoreAirplanePref;
+    private CheckBoxPreference mIgnoreNoHeadsetPref;
     private ListPreference mSeekSensitivityPref;
 
     private static final String PROP_CHARGE_LED_MODE = "persist.sys.charge_led";
@@ -35,6 +36,8 @@ public class SettingsActivity extends PreferenceActivity implements OnPreference
 
         mIgnoreAirplanePref = (CheckBoxPreference) prefs.findPreference("ignore_airplane_mode");
         mIgnoreAirplanePref.setOnPreferenceChangeListener(this);
+        mIgnoreNoHeadsetPref = (CheckBoxPreference) prefs.findPreference("ignore_no_headset");
+        mIgnoreNoHeadsetPref.setOnPreferenceChangeListener(this);
         mSeekSensitivityPref = (ListPreference) prefs.findPreference("seek_sensitivity");
         mSeekSensitivityPref.setOnPreferenceChangeListener(this);
     }
@@ -59,6 +62,18 @@ public class SettingsActivity extends PreferenceActivity implements OnPreference
 
                 dialog.show();
                 return false;
+            }
+        } else if (preference == mIgnoreNoHeadsetPref) {
+            final Boolean value = (Boolean) newValue;
+
+            if (value) {
+                AlertDialog dialog = new AlertDialog.Builder(this)
+                        .setTitle(R.string.notice)
+                        .setMessage(R.string.no_headset_ignore_message)
+                        .setPositiveButton(android.R.string.ok, null)
+                        .create();
+
+                dialog.show();
             }
         } else if (preference == mSeekSensitivityPref) {
             final int value = Integer.parseInt((String) newValue);

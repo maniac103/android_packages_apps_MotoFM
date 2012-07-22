@@ -11,6 +11,7 @@ public class Preferences {
     private static final String KEY_SCANNED = "scanned";
     private static final String KEY_ENABLED = "enabled";
     private static final String KEY_IGNORE_AIRPLANE_MODE = "ignore_airplane_mode";
+    private static final String KEY_IGNORE_NO_HEADSET = "ignore_no_headset";
     private static final String KEY_SEEK_SENSITIVITY = "seek_sensitivity";
 
     private static final int DEFAULT_VOLUME = 0;
@@ -64,6 +65,9 @@ public class Preferences {
 
     static public boolean isAirplaneModeIgnored(Context context) {
         return getPrefs(context).getBoolean(KEY_IGNORE_AIRPLANE_MODE, false);
+    }
+    static public boolean isHeadsetRequired(Context context) {
+        return !getPrefs(context).getBoolean(KEY_IGNORE_NO_HEADSET, false);
     }
 
     static private SharedPreferences getPrefs(Context context) {

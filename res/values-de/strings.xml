@@ -106,6 +106,8 @@
     <string name="general_settings_title">Allgemein</string>
     <string name="ignore_airplane_title">Flugmodus ignorieren</string>
     <string name="ignore_airplane_summary">Benutzung des FM-Radios auch im Flugmodus erlauben</string>
+    <string name="ignore_no_headset_title">Headset ignorieren</string>
+    <string name="ignore_no_headset_summary">Benutzung des FM-Radios ohne Headset erlauben - verschlechtert Empfangsqualität</string>
     <string name="tuning_settings_title">Sendersuche</string>
     <string name="seek_sensitivity_title">Empfindlichkeit</string>
     <string name="seek_sensitivity_summary">Minimalen Signalpegel einstellen, der benötigt wird, um einen Sender bei der Suche zu finden</string>
@@ -115,7 +117,9 @@
     <string name="seek_sensitivity_entry_weak">Schwach</string>
     <string name="seek_sensitivity_entry_veryweak">Sehr schwach</string>
 
+    <string name="notice">Hinweis</string>
     <string name="warning">Warnung</string>
+    <string name="no_headset_ignore_message">Da das Headset als FM-Antenne benutzt wird, wird die Empfangsqualität stark verschlechtert sein, wenn das FM-Radio ohne Headset benutzt wird.</string>
     <string name="airplane_ignore_warning_message">Das FM-Radio benutzt intern die Bluetooth-Hardware des Telefons, deren Benutzung unter Umständen, z.B. im Flugzeug, illegal sein kann.\nMöchten Sie die Benutzung des FM-Radios im Flugmodus wirklich erlauben?</string>
     <string name="yes">Ja</string>
     <string name="no">Nein</string>
