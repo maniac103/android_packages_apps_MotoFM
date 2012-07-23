@@ -21,7 +21,7 @@
     <string name="select_all">Sélectionner tout</string>
     <string name="unselect_all">Désélectionner tout</string>
     <string name="fmradio_scan_confirm_msg">Souhaitez-vous rechercher toutes les stations disponibles ?</string>
-    <string name="fmradio_clear_confirm_msg">"Souhaitez-vous effacer toutes les stations enregistrées avant d'effectuer une recherche ?"</string>
+    <string name="fmradio_clear_confirm_msg">"Souhaitez-vous effacer toutes les stations enregistrées avant d\'effectuer une recherche ?"</string>
     <string name="fmradio_no_headset">"L'utilisation de la radio FM nécessite un casque. Veuillez en brancher un."</string>
     <string name="fmradio_airplane_mode_enabled">Pour utiliser la radio FM, désactivez le mode avion.</string>
     <string name="fmradio_music_playing_at_begin">Pour utiliser la radio FM, désactivez la musique.</string>
@@ -92,4 +92,27 @@
     <string name="fm_pty_list_61">Météo</string>
     <string name="fm_pty_list_62">"Test d'urgence"</string>
     <string name="fm_pty_list_63">Urgence</string>
+
+    <string name="settings_title">Préférences</string>
+    <string name="general_settings_title">Général</string>
+    <string name="ignore_airplane_title">Ignorer le mode Avion</string>
+    <string name="ignore_airplane_summary">Autoriser l\'utilisation de la FM même si le mode Avion est activé</string>
+    <string name="ignore_no_headset_title">Ignorer les écouteurs</string>
+    <string name="ignore_no_headset_summary">Autoriser le lancement de l\'application même si les écouteurs ne sont pas branchés. La qualité de réception sera médiocre</string>
+    <string name="tuning_settings_title">Tuning</string>
+    <string name="seek_sensitivity_title">Sensibilité</string>
+    <string name="seek_sensitivity_summary">Niveau de réception requis pour accrocher les stations lors de la recherche</string>
+    <string name="seek_sensitivity_entry_verystrong">Très élevé</string>
+    <string name="seek_sensitivity_entry_strong">Elevé</string>
+    <string name="seek_sensitivity_entry_medium">Moyen</string>
+    <string name="seek_sensitivity_entry_weak">Bas</string>
+    <string name="seek_sensitivity_entry_veryweak">Très bas</string>
+
+    <string name="notice">Note</string>
+    <string name="warning">Attention</string>
+    <string name="no_headset_ignore_message">Comme le cable des écouteurs est utilisé comme antenne, la qualité de réception va être grandement dégradée si ceux-ci ne sont pas branchés.</string>
+    <string name="airplane_ignore_warning_message">La radio FM utilise la puce Bluetooth, ce qui peut être illégal dans certaines conditions, comme dans les avions.\nConfirmez-vous l\'activation de la radio en mode Avion ?</string>
+    <string name="yes">Oui</string>
+    <string name="no">Non</string>
+
 </resources>
