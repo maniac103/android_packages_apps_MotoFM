@@ -23,10 +23,8 @@ import java.util.ArrayList;
 public class SaveChannelDialog extends AlertDialog
         implements DialogInterface.OnClickListener, CheckBox.OnCheckedChangeListener {
     private int mFrequency;
-    private int mInitialPreset;
-    private String mInitialName;
-
     private OnSaveListener mListener;
+    private TextView mFrequencyField;
     private CheckBox mUseRdsName;
     private Spinner mPresetSpinner;
     private EditText mNameField;
@@ -36,13 +34,9 @@ public class SaveChannelDialog extends AlertDialog
         void onSaveCanceled();
     }
 
-    public SaveChannelDialog(Context context, int frequency,
-            int initialPreset, String initialName, OnSaveListener listener) {
+    public SaveChannelDialog(Context context, OnSaveListener listener) {
         super(context);
 
-        mFrequency = frequency;
-        mInitialPreset = initialPreset;
-        mInitialName = initialName;
         mListener = listener;
     }
 
@@ -56,16 +50,12 @@ public class SaveChannelDialog extends AlertDialog
         setInverseBackgroundForced(true);
         setTitle(R.string.save_preset);
 
-        final TextView frequencyField = (TextView) view.findViewById(R.id.channel_frequency);
-        frequencyField.setText(FMUtil.formatFrequency(context, mFrequency));
-
+        mFrequencyField = (TextView) view.findViewById(R.id.channel_frequency);
         mPresetSpinner = (Spinner) view.findViewById(R.id.preset_spinner);
         mUseRdsName = (CheckBox) view.findViewById(R.id.use_rds_name);
         mNameField = (EditText) view.findViewById(R.id.channel_name);
 
-        mNameField.setText(mInitialName);
         mUseRdsName.setOnCheckedChangeListener(this);
-        mUseRdsName.setChecked(TextUtils.isEmpty(mInitialName));
 
         setButton(DialogInterface.BUTTON_POSITIVE, context.getString(android.R.string.ok), this);
         setButton(DialogInterface.BUTTON_NEGATIVE, context.getString(android.R.string.cancel), this);
@@ -73,6 +63,15 @@ public class SaveChannelDialog extends AlertDialog
         initPresetSpinner();
 
         super.onCreate(savedInstanceState);
+    }
+
+    public void initialize(int frequency, int initialPreset, String initialName) {
+        mFrequencyField.setText(FMUtil.formatFrequency(getContext(), frequency));
+
+        mNameField.setText(initialName);
+        mUseRdsName.setChecked(TextUtils.isEmpty(initialName));
+
+        mPresetSpinner.setSelection(initialPreset);
     }
 
     @Override
@@ -122,7 +121,6 @@ public class SaveChannelDialog extends AlertDialog
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
             mPresetSpinner.setAdapter(adapter);
-            mPresetSpinner.setSelection(mInitialPreset);
         }
     }
 }

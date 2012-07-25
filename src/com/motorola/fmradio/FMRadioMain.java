@@ -67,11 +67,12 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private static int LIGHT_ON_TIME = 90000;
     private static int PRESET_NUM = 20;
 
-    private static final int DIALOG_SCAN_PROGRESS = 0;
-    private static final int DIALOG_IF_SCAN_FIRST = 1;
-    private static final int DIALOG_IF_SCAN_NEXT = 2;
-    private static final int DIALOG_SAVE_CHANNEL = 3;
-    private static final int DIALOG_EDIT_CHANNEL = 4;
+    private static final int DIALOG_POWERON = 0;
+    private static final int DIALOG_SCAN_PROGRESS = 1;
+    private static final int DIALOG_IF_SCAN_FIRST = 2;
+    private static final int DIALOG_IF_SCAN_NEXT = 3;
+    private static final int DIALOG_SAVE_CHANNEL = 4;
+    private static final int DIALOG_EDIT_CHANNEL = 5;
 
     private static final String ARG_FREQUENCY = "frequency";
     private static final String ARG_PRESET = "preset";
@@ -172,7 +173,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     private Cursor mCursor;
     private ListView mChannelList;
-    private ProgressDialog mProgressDialog;
 
     private IFMRadioPlayerService mService = null;
     private boolean mIsBound = false;
@@ -185,6 +185,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     private int mCurFreq = FMUtil.MIN_FREQUENCY;
     private int mPreFreq = FMUtil.MIN_FREQUENCY;
+    private boolean mScanning = false;
     private int mScannedStations = -1;
     private int mLongPressedButton = 0;
 
@@ -252,10 +253,9 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
             } catch (RemoteException e) {
                 Log.e(TAG, "Could not check FM power status", e);
             }
-            if (success && mProgressDialog == null) {
-                mProgressDialog = ProgressDialog.show(FMRadioMain.this, "",
-                        getString(R.string.fmradio_waiting_for_power_on), true, true);
+            if (success) {
                 Log.v(TAG, "Waiting for FM service to come up");
+                showDialog(DIALOG_POWERON);
             }
         }
 
@@ -276,10 +276,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 case MSG_POWERON_COMPLETE:
                     if (msg.arg1 != 0) {
                         Log.d(TAG, "FM radio powered on successfully");
-                        if (mProgressDialog != null) {
-                            mProgressDialog.dismiss();
-                            mProgressDialog = null;
-                        }
+                        dismissDialog(DIALOG_POWERON);
                         enableUI(true);
                         mAM.setStreamVolume(AudioManager.STREAM_FM, Preferences.getVolume(context), 0);
                         if (isDBEmpty() || !Preferences.isScanned(context)) {
@@ -449,9 +446,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         unbindService();
         mService = null;
         mWakeLock.release();
-        if (mProgressDialog != null) {
-            mProgressDialog.dismiss();
-        }
     }
 
     @Override
@@ -475,14 +469,32 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     }
 
     @Override
+    protected void onPrepareDialog(int id, Dialog dialog, Bundle args) {
+        if (id == DIALOG_SAVE_CHANNEL) {
+            SaveChannelDialog d = (SaveChannelDialog) dialog;
+            int frequency = args.getInt(ARG_FREQUENCY, FMUtil.MIN_FREQUENCY);
+            int preset = args.getInt(ARG_PRESET, 0);
+            String name = args.getString(ARG_NAME);
+
+            d.initialize(frequency, preset, name);
+        } else if (id == DIALOG_EDIT_CHANNEL) {
+            EditChannelDialog d = (EditChannelDialog) dialog;
+            int preset = args.getInt(ARG_PRESET, 0);
+
+            d.setPreset(preset);
+        } else if (id == DIALOG_SCAN_PROGRESS) {
+            ProgressDialog d = (ProgressDialog) dialog;
+            final String message = MessageFormat.format(getString(R.string.scan_progress), mScannedStations);
+
+            d.setMessage(message);
+        }
+    }
+
+    @Override
     protected Dialog onCreateDialog(int id, Bundle args) {
         switch (id) {
-            case DIALOG_SAVE_CHANNEL: {
-                int frequency = args.getInt(ARG_FREQUENCY, FMUtil.MIN_FREQUENCY);
-                int preset = args.getInt(ARG_PRESET, 0);
-                String name = args.getString(ARG_NAME);
-
-                return new SaveChannelDialog(this, frequency, preset, name, new SaveChannelDialog.OnSaveListener() {
+            case DIALOG_SAVE_CHANNEL:
+                return new SaveChannelDialog(this, new SaveChannelDialog.OnSaveListener() {
                     @Override
                     public void onPresetSaved(int id) {
                         updatePresetSwitcher(id + 1);
@@ -494,40 +506,33 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                         updatePresetSwitcher();
                     }
                 });
+            case DIALOG_EDIT_CHANNEL:
+                return new EditChannelDialog(this);
+            case DIALOG_POWERON: {
+                ProgressDialog dialog = new ProgressDialog(this);
+                dialog.setMessage(getString(R.string.fmradio_waiting_for_power_on));
+                dialog.setIndeterminate(true);
+                dialog.setCancelable(true);
+                return dialog;
             }
-            case DIALOG_EDIT_CHANNEL: {
-                int preset = args.getInt(ARG_PRESET, 0);
-
-                return new EditChannelDialog(this, preset);
-            }
-            case DIALOG_SCAN_PROGRESS:
-                mProgressDialog = new ProgressDialog(this);
-                mProgressDialog.setTitle(getString(R.string.fmradio_scanning_title));
-                mProgressDialog.setMessage(MessageFormat.format(getString(R.string.scan_progress), 0));
-                mProgressDialog.setIndeterminate(false);
-                mProgressDialog.setCancelable(true);
-                mProgressDialog.setButton(getString(android.R.string.cancel), new DialogInterface.OnClickListener() {
+            case DIALOG_SCAN_PROGRESS: {
+                ProgressDialog dialog = new ProgressDialog(this);
+                dialog.setTitle(getString(R.string.fmradio_scanning_title));
+                dialog.setIndeterminate(false);
+                dialog.setCancelable(true);
+                dialog.setButton(getString(android.R.string.cancel), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int whichButton) {
                         dialog.cancel();
                     }
                 });
-                mProgressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
                     public void onCancel(DialogInterface dialog) {
-                        Log.v(TAG, "Cancelling progress dialog");
-                        try {
-                            mService.stopScan();
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "Stopping scan failed", e);
-                        }
-                        mProgressDialog.dismiss();
-                        mProgressDialog = null;
-                        setSelectedPreset(-1);
-                        enableUI(true);
-                        mHandler.sendEmptyMessageDelayed(MSG_STOP_SCAN_ANIMATION, SCAN_STOP_DELAY);
+                        cancelScan();
                     }
                 });
-                return mProgressDialog;
+                return dialog;
+            }
             case DIALOG_IF_SCAN_FIRST:
                 return new AlertDialog.Builder(this)
                         .setTitle(R.string.scan)
@@ -1060,6 +1065,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
             Preferences.setScanned(FMRadioMain.this, true);
             mCurFreq = FMUtil.MIN_FREQUENCY;
             mWakeLock.acquire(LIGHT_ON_TIME);
+            mScanning = true;
             mScannedStations = 0;
             displayRdsScrollText(false);
             showDialog(DIALOG_SCAN_PROGRESS);
@@ -1313,9 +1319,8 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     }
 
     private void handleScanFinished(boolean canceled) {
-        if (mProgressDialog != null) {
-            mProgressDialog.dismiss();
-            mProgressDialog = null;
+        if (!canceled) {
+            dismissDialog(DIALOG_SCAN_PROGRESS);
         }
         StringBuilder sb = new StringBuilder();
         if (canceled && mScannedStations < PRESET_NUM) {
@@ -1333,31 +1338,43 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         updateFrequency();
         setSelectedPreset(-1);
         mScannedStations = -1;
+        mScanning = false;
     }
 
     private void handleScannedStation(int frequency) {
         Log.d(TAG, "Scanned station on frequency " + frequency + ", scanned so far " + mScannedStations);
         mCurFreq = frequency;
 
-        Log.d(TAG, "progress dialog " + mProgressDialog + " scanned " + mScannedStations);
-        if (mProgressDialog == null) {
+        if (!mScanning) {
             return;
         }
 
         if (mScannedStations < PRESET_NUM) {
             saveStationToDB(mScannedStations, frequency, "", "");
             mScannedStations++;
-
-            final String message = MessageFormat.format(getString(R.string.scan_progress), mScannedStations);
-            mProgressDialog.setMessage(message);
+            showDialog(DIALOG_SCAN_PROGRESS);
         }
 
         if (mScannedStations >= PRESET_NUM) {
-            mProgressDialog.cancel();
+            cancelScan();
         }
 
         updateDisplayPanel(mCurFreq, updatePresetSwitcher());
         displayRdsScrollText(false);
+    }
+
+    private void cancelScan() {
+        Log.v(TAG, "Cancelling progress dialog");
+        try {
+            mService.stopScan();
+        } catch (RemoteException e) {
+            Log.e(TAG, "Stopping scan failed", e);
+        }
+        dismissDialog(DIALOG_SCAN_PROGRESS);
+        setSelectedPreset(-1);
+        enableUI(true);
+        mHandler.sendEmptyMessageDelayed(MSG_STOP_SCAN_ANIMATION, SCAN_STOP_DELAY);
+        mScanning = false;
     }
 
     private void handleSeekFinished(boolean aborted) {

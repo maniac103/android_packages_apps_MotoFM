@@ -19,16 +19,13 @@ import com.motorola.fmradio.FMDataProvider.Channels;
 public class EditChannelDialog extends AlertDialog
         implements DialogInterface.OnClickListener, CheckBox.OnCheckedChangeListener {
     private Uri mUri;
-    private int mPreset;
 
     private TextView mFrequencyField;
     private CheckBox mUseRdsName;
     private EditText mNameField;
 
-    public EditChannelDialog(Context context, int preset) {
+    public EditChannelDialog(Context context) {
         super(context);
-
-        mPreset = preset;
     }
 
     @Override
@@ -39,7 +36,7 @@ public class EditChannelDialog extends AlertDialog
         setIcon(0);
         setView(view);
         setInverseBackgroundForced(true);
-        setTitle(context.getString(R.string.edit_preset_title, (mPreset + 1)));
+        setTitle(" ");
 
         mFrequencyField = (TextView) view.findViewById(R.id.channel_frequency);
         mUseRdsName = (CheckBox) view.findViewById(R.id.use_rds_name);
@@ -49,9 +46,12 @@ public class EditChannelDialog extends AlertDialog
         setButton(DialogInterface.BUTTON_POSITIVE, context.getString(android.R.string.ok), this);
         setButton(DialogInterface.BUTTON_NEGATIVE, context.getString(android.R.string.cancel), this);
 
-        initData();
-
         super.onCreate(savedInstanceState);
+    }
+
+    public void setPreset(int preset) {
+        setTitle(getContext().getString(R.string.edit_preset_title, (preset + 1)));
+        initData(preset);
     }
 
     @Override
@@ -71,8 +71,8 @@ public class EditChannelDialog extends AlertDialog
         mNameField.setVisibility(isChecked ? View.GONE : View.VISIBLE);
     }
 
-    private void initData() {
-        mUri = Uri.withAppendedPath(Channels.CONTENT_URI, String.valueOf(mPreset));
+    private void initData(int preset) {
+        mUri = Uri.withAppendedPath(Channels.CONTENT_URI, String.valueOf(preset));
 
         final Context context = getContext();
         Cursor cursor = context.getContentResolver().query(mUri, FMUtil.PROJECTION, null, null, null);
