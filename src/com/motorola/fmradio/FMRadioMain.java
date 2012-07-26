@@ -1,6 +1,8 @@
 
 package com.motorola.fmradio;
 
+import android.view.Window;
+
 import java.text.MessageFormat;
 
 import android.app.Activity;
@@ -453,6 +455,12 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     public void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate()");
         super.onCreate(savedInstanceState);
+
+        // Hide Action bar if user prefers so.
+        if (Preferences.isActionBarHidden(this)) {
+        } else {
+            requestWindowFeature(Window.FEATURE_ACTION_BAR);
+        }
 
         setContentView(R.layout.main);
         setVolumeControlStream(AudioManager.STREAM_FM);

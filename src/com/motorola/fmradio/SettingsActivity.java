@@ -19,6 +19,7 @@ public class SettingsActivity extends PreferenceActivity implements OnPreference
     private CheckBoxPreference mIgnoreAirplanePref;
     private CheckBoxPreference mIgnoreNoHeadsetPref;
     private ListPreference mSeekSensitivityPref;
+    private CheckBoxPreference mActionBarPref;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -33,6 +34,8 @@ public class SettingsActivity extends PreferenceActivity implements OnPreference
         mIgnoreNoHeadsetPref.setOnPreferenceChangeListener(this);
         mSeekSensitivityPref = (ListPreference) prefs.findPreference("seek_sensitivity");
         mSeekSensitivityPref.setOnPreferenceChangeListener(this);
+        mActionBarPref = (CheckBoxPreference) prefs.findPreference("hide_actionbar");
+        mActionBarPref.setOnPreferenceChangeListener(this);
     }
 
     @Override
@@ -73,6 +76,8 @@ public class SettingsActivity extends PreferenceActivity implements OnPreference
             Intent i = new Intent(ACTION_RSSI_UPDATED);
             i.putExtra(EXTRA_RSSI, value);
             sendBroadcast(i);
+        } else if (preference == mActionBarPref) {
+            // TODO call configuration change
         }
 
         return true;

@@ -40,4 +40,14 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory android:key="interface"
+                        android:title="@string/interface_settings_title" >
+
+        <CheckBoxPreference android:defaultValue="false"
+                            android:key="hide_actionbar"
+                            android:summary="@string/hide_actionbar_summary"
+                            android:title="@string/hide_actionbar_title" />
+
+    </PreferenceCategory>
+
 </PreferenceScreen>

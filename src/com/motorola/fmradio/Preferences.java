@@ -15,6 +15,7 @@ public class Preferences {
     private static final String KEY_IGNORE_NO_HEADSET = "ignore_no_headset";
     private static final String KEY_SEEK_SENSITIVITY = "seek_sensitivity";
     private static final String KEY_MEDIA_BUTTON_BEHAVIOUR = "media_button_behaviour";
+    private static final String KEY_HIDE_ACTIONBAR = "hide_actionbar";
 
     private static final int DEFAULT_VOLUME = 0;
     private static final int DEFAULT_FREQUENCY = FMUtil.MIN_FREQUENCY;
@@ -75,6 +76,9 @@ public class Preferences {
     static public boolean mediaButtonPrevNextSwitchesPresets(Context context) {
         String value = getPrefs(context).getString(KEY_MEDIA_BUTTON_BEHAVIOUR, null);
         return !TextUtils.equals(value, "seek");
+
+    static public boolean isActionBarHidden(Context context) {
+        return getPrefs(context).getBoolean(KEY_HIDE_ACTIONBAR, false);
     }
 
     static private SharedPreferences getPrefs(Context context) {
