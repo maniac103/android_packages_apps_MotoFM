@@ -20,13 +20,6 @@ public class SettingsActivity extends PreferenceActivity implements OnPreference
     private CheckBoxPreference mIgnoreNoHeadsetPref;
     private ListPreference mSeekSensitivityPref;
 
-    private static final String PROP_CHARGE_LED_MODE = "persist.sys.charge_led";
-    private static final String PROP_TOUCH_POINTS = "persist.sys.multitouch";
-    private static final String PROP_KINETO_ENABLED = "persist.sys.kineto.enable";
-    private static final String FILE_TOUCH_POINTS = "/proc/multitouch/num";
-    private static final String FILE_BOOTMENU_PIN = "/data/secure/bootmenu_pin";
-    private static final String KINETO_PACKAGE = "com.android.kineto";
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
