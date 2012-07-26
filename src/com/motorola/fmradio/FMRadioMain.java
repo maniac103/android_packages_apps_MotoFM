@@ -286,6 +286,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     Preferences.setEnabled(context, msg.arg1 != 0);
                     break;
                 case MSG_TUNE_FINISHED:
+                    mCurFreq = msg.arg1;
                     Log.d(TAG, "FM tune succeeded");
                     displayRdsScrollText(false);
                     enableUI(true);
@@ -362,8 +363,13 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         }
 
         @Override
-        public void onTuneChanged(boolean success) {
-            mHandler.sendEmptyMessage(success ? MSG_TUNE_FINISHED : MSG_ERROR);
+        public void onTuneChanged(boolean success, int newFrequency) {
+            if (success) {
+                Message msg = Message.obtain(mHandler, MSG_TUNE_FINISHED, newFrequency, 0, null);
+                mHandler.sendMessage(msg);
+            } else {
+                mHandler.sendEmptyMessage(MSG_ERROR);
+            }
         }
 
         @Override

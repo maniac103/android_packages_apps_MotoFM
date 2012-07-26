@@ -24,8 +24,6 @@
     <string name="fmradio_clear_confirm_msg">Deseja apagar todas as estações salvas antes de procurar?</string>
     <string name="fmradio_no_headset">Rádio FM requer um fone de ouvido para funcionar. Por favor, conecte um fone de ouvido.</string>
     <string name="fmradio_airplane_mode_enabled">Para usar o rádio FM, por favor, desligue o modo avião.</string>
-    <string name="fmradio_music_playing_at_begin">Para usar o rádio FM, por favor, desligue o aplicativo Música.</string>
-    <string name="fmradio_music_playing_in_listen">O rádio FM é automaticamente desligado ao reproduzir uma música.</string>
     <string name="fmradio_waiting_for_power_on">Carregando o rádio FM. Por favor, aguarde.</string>
     <string name="service_start_error_title">Falha no serviço de rádio FM</string>
     <string name="service_start_error_msg">Ocorreu um erro no rádio FM e ele será fechado. Tente executá-lo novamente.</string>

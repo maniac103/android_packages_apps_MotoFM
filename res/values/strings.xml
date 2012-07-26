@@ -33,8 +33,6 @@
     <string name="fmradio_clear_confirm_msg">Scanning for stations will remove all your currently saved stations. Would you like to continue the scan?</string>
     <string name="fmradio_no_headset">To use FM Radio, please plug in headset with round plug.</string>
     <string name="fmradio_airplane_mode_enabled">To use FM Radio, please turn off Airplane mode.</string>
-    <string name="fmradio_music_playing_at_begin">While another audio application is running, radio cannot be accessed. Please exit the other application.</string>
-    <string name="fmradio_music_playing_in_listen">FM Radio switches off automatically while another audio application is running.</string>
     <string name="fmradio_waiting_for_power_on">FM Radio is being launched, please wait\u2026</string>
     <string name="error_start_scan">The scan was not able to start. Please try again.</string>
     <string name="service_start_error_title">FM Radio Service Start Failed</string>

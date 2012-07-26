@@ -23,8 +23,6 @@
     <string name="fmradio_clear_confirm_msg">¿Deseas borrar todos los canales guardados antes de buscar?</string>
     <string name="fmradio_no_headset">Para que la radio FM funcione, debes conectar un auricular.</string>
     <string name="fmradio_airplane_mode_enabled">Para usar la radio FM, desactive el modo avión.</string>
-    <string name="fmradio_music_playing_at_begin">Para usar la radio FM, apaga la música.</string>
-    <string name="fmradio_music_playing_in_listen">La radio FM se desactiva automáticamente cuando se reproduce música.</string>
     <string name="fmradio_waiting_for_power_on">La radio FM se está cargando, espera.</string>
     <string name="service_start_error_title">Error al iniciar el servicio de radio FM</string>
     <string name="service_start_error_msg">La radio FM se va a cerrar debido a un problema surgido. Intenta iniciarla de nuevo.</string>

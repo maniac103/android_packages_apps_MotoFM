@@ -24,8 +24,6 @@
     <string name="fmradio_clear_confirm_msg">Cancellare tutti i canali salvati prima di eseguire la ricerca?</string>
     <string name="fmradio_no_headset">"La radio FM richiede l'utilizzo di cuffie per funzionare. Collega le cuffie."</string>
     <string name="fmradio_airplane_mode_enabled">Per usare la radio FM, disattiva la Modalità aereo.</string>
-    <string name="fmradio_music_playing_at_begin">"Per usare la radio FM, disattiva l'opzione Musica."</string>
-    <string name="fmradio_music_playing_in_listen">Durante la riproduzione della musica, la radio FM si spegne automaticamente.</string>
     <string name="fmradio_waiting_for_power_on">Caricamento radio FM in corso. Attendi.</string>
     <string name="service_start_error_title">Avvio servizio radio FM non riuscito</string>
     <string name="service_start_error_msg">"Si è verificato un problema con la radio FM e l'applicazione verrà chiusa. Riprova ad avviare la radio FM."</string>

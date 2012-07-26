@@ -24,8 +24,6 @@
     <string name="fmradio_clear_confirm_msg">"Souhaitez-vous effacer toutes les stations enregistrées avant d\'effectuer une recherche ?"</string>
     <string name="fmradio_no_headset">"L'utilisation de la radio FM nécessite un casque. Veuillez en brancher un."</string>
     <string name="fmradio_airplane_mode_enabled">Pour utiliser la radio FM, désactivez le mode avion.</string>
-    <string name="fmradio_music_playing_at_begin">Pour utiliser la radio FM, désactivez la musique.</string>
-    <string name="fmradio_music_playing_in_listen">"La radio FM s'éteint automatiquement lorsque vous écoutez de la musique."</string>
     <string name="fmradio_waiting_for_power_on">Chargement de la radio FM, veuillez patienter.</string>
     <string name="service_start_error_title">Échec de démarrage du service de radio FM</string>
     <string name="service_start_error_msg">La radio FM a rencontré un problème et va fermer. Essayez de démarrer la radio FM à nouveau.</string>

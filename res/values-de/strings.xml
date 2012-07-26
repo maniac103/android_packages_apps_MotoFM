@@ -32,8 +32,6 @@
     <string name="fmradio_clear_confirm_msg">Möchten Sie vor dem Suchen alle gespeicherten Sender löschen?</string>
     <string name="fmradio_no_headset">Für das FM-Radio ist ein Headset erforderlich. Bitte schließen Sie ein Headset an.</string>
     <string name="fmradio_airplane_mode_enabled">Schalten Sie den Flugzeugmodus aus, um FM-Radio zu verwenden.</string>
-    <string name="fmradio_music_playing_at_begin">Schalten Sie die Musik aus, um FM-Radio zu verwenden.</string>
-    <string name="fmradio_music_playing_in_listen">Das FM-Radio schaltet sich während der Musikwiedergabe automatisch aus.</string>
     <string name="fmradio_waiting_for_power_on">Das FM-Radio wird geladen, bitte warten Sie.</string>
     <string name="error_start_scan">Die Sendersuche konnte nicht gestartet werden. Bitte versuchen Sie es noch einmal.</string>
     <string name="service_start_error_title">Starten des FM-Radio-Services fehlgeschlagen</string>
