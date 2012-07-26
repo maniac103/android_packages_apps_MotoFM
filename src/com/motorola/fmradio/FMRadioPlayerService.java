@@ -79,23 +79,29 @@ public class FMRadioPlayerService extends Service {
 
     private IFMRadioService mIFMRadioService = null;
     private IFMRadioPlayerServiceCallbacks mCallbacks = null;
+
+    /* flag indicating that the FM startup sequence is complete */
     private boolean mReady = false;
+    /* flag indicating the current mute state */
     private boolean mMuted = false;
+    /* flag indicating whether any client is bound to the service */
+    private boolean mInUse = false;
+    /* flag indicating whether we're bound to the HW service */
+    private boolean mBound = false;
+    /* flag indicating whether the hardware is powered */
+    private boolean mPowerOn = false;
+    /* flag indicating whether we're on the US band (important for handling RDS data) */
+    private boolean mUSBand = false;
 
     private int mServiceStartId = -1;
-    private boolean mInUse = false;
 
-    private boolean mUSBand = false;
+    private int mHeadsetState = -1;
     private int mAudioMode = 0;
     private int mAudioRouting = FM_ROUTING_HEADSET;
 
-    private AudioManager am;
+    private AudioManager mAM;
     private Notification mNotification;
     private PendingIntent mActivityIntent;
-
-    private int mHeadsetState = -1;
-    private boolean misPowerOn = false;
-    private boolean mBound = false;
 
     private int mCurFreq;
     private String mRdsStationName;
@@ -187,11 +193,11 @@ public class FMRadioPlayerService extends Service {
                     if (status == 0) {
                         notifyEnableChangeComplete(true, false);
                     } else {
-                        misPowerOn = true;
+                        mPowerOn = true;
                     }
                     break;
                 case 10:
-                    misPowerOn = false;
+                    mPowerOn = false;
                     break;
                case 15: {
                     Message msg = Message.obtain(mHandler, MSG_UPDATE_AUDIOMODE, Integer.parseInt(value), 0, null);
@@ -211,7 +217,7 @@ public class FMRadioPlayerService extends Service {
                     resetRDSData();
                     if (!mReady) {
                         Log.w(TAG, "Complete FM Radio PowerOn Sequence Succeeded!");
-                        am.setParameters(LAUNCH_KEY + "=" + LAUNCH_VALUE_ON);
+                        mAM.setParameters(LAUNCH_KEY + "=" + LAUNCH_VALUE_ON);
                         audioPrepare(mAudioRouting);
                         mReady = true;
                         notifyEnableChangeComplete(true, true);
@@ -271,7 +277,7 @@ public class FMRadioPlayerService extends Service {
         @Override
         public boolean powerOn() {
             Log.d(TAG, "Got FM radio power on request");
-            if (misPowerOn) {
+            if (mPowerOn) {
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
@@ -281,7 +287,10 @@ public class FMRadioPlayerService extends Service {
                 return true;
             }
 
-            if (isAirplaneModeOn() && !Preferences.isAirplaneModeIgnored(FMRadioPlayerService.this)) {
+            boolean inAirplaneMode = Settings.System.getInt(
+                    getContentResolver(), Settings.System.AIRPLANE_MODE_ON, 0) == 1;
+
+            if (inAirplaneMode && !Preferences.isAirplaneModeIgnored(FMRadioPlayerService.this)) {
                 Message msg = Message.obtain(mHandler, MSG_SHOW_NOTICE,
                         R.string.fmradio_airplane_mode_enabled, 0, null);
                 mHandler.sendMessage(msg);
@@ -303,7 +312,7 @@ public class FMRadioPlayerService extends Service {
         public void powerOff() {
             Log.d(TAG, "Got FM radio power off request");
             if (mReady) {
-                am.setMode(AudioManager.MODE_NORMAL);
+                mAM.setMode(AudioManager.MODE_NORMAL);
                 if (mBound) {
                     unbindService(mConnection);
                     mBound = false;
@@ -532,7 +541,7 @@ public class FMRadioPlayerService extends Service {
         Log.d(TAG, "onCreate()");
         super.onCreate();
 
-        am = (AudioManager) getSystemService(AUDIO_SERVICE);
+        mAM = (AudioManager) getSystemService(AUDIO_SERVICE);
 
         scheduleShutdown();
 
@@ -606,15 +615,64 @@ public class FMRadioPlayerService extends Service {
                 ROUTING_VALUE_SPEAKER : ROUTING_VALUE_HEADSET;
 
         Log.d(TAG, "Setting FM audio routing to " + route);
-        am.setParameters(ROUTING_KEY + "="  + route);
+        mAM.setParameters(ROUTING_KEY + "="  + route);
     }
 
-    private final boolean isAirplaneModeOn() {
-        return Settings.System.getInt(getContentResolver(), Settings.System.AIRPLANE_MODE_ON, 0) == 1;
+    private void restoreAudioRoute() {
+        mAM.setParameters(LAUNCH_KEY + "=" + LAUNCH_VALUE_OFF);
+        mAM.setMode(AudioManager.MODE_NORMAL);
     }
 
-    private final boolean isMusicPlaying() {
-        return ((AudioManager) getSystemService(AUDIO_SERVICE)).isMusicActive();
+    private boolean startupFM() {
+        if (mBound) {
+            return true;
+        }
+
+        mBound = bindService(new Intent("com.motorola.android.fmradio.FMRADIO_SERVICE"), mConnection, 1);
+        if (!mBound) {
+            Log.w(TAG, "Powering on FM radio failed");
+            mHandler.sendEmptyMessage(MSG_SHUTDOWN);
+            return false;
+        }
+
+        mAM.requestAudioFocus(mAudioFocusListener, AudioManager.STREAM_FM, AudioManager.AUDIOFOCUS_GAIN);
+        setMediaButtonReceiverEnabled(true);
+        registerBroadcastReceiver();
+        registerObserver();
+
+        return true;
+    }
+
+    private void shutdownFM() {
+        if (mBound) {
+            unbindService(mConnection);
+            mBound = false;
+        }
+        if (mReceiver != null) {
+            unregisterReceiver(mReceiver);
+            mReceiver = null;
+        }
+        if (mObserver != null) {
+            getContentResolver().unregisterContentObserver(mObserver);
+        }
+        setMediaButtonReceiverEnabled(false);
+        mAM.abandonAudioFocus(mAudioFocusListener);
+
+        if (mReady) {
+            restoreAudioRoute();
+        }
+
+        stopForeground(true);
+        updateFmStateBroadcast(false);
+        updateMusicMetadata(null, null, false);
+        notifyEnableChangeComplete(false, true);
+        scheduleShutdown();
+    }
+
+    private void scheduleShutdown() {
+        Message msg = mHandler.obtainMessage(MSG_SHUTDOWN);
+        mHandler.removeMessages(MSG_SHUTDOWN);
+        mHandler.sendMessageDelayed(msg, IDLE_DELAY);
     }
 
     private void registerObserver() {
@@ -634,7 +692,7 @@ public class FMRadioPlayerService extends Service {
         getContentResolver().registerContentObserver(Channels.CONTENT_URI, true, mObserver);
     }
 
-    private void registerBroadcastListener() {
+    private void registerBroadcastReceiver() {
         if (mReceiver != null) {
             return;
         }
@@ -685,17 +743,27 @@ public class FMRadioPlayerService extends Service {
         registerReceiver(mReceiver, filter);
     }
 
+    private void setMediaButtonReceiverEnabled(boolean enable) {
+        int flag = enable
+                ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                : PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
+
+        ComponentName component = new ComponentName(getPackageName(), FMMediaButtonReceiver.class.getName());
+
+        getPackageManager().setComponentEnabledSetting(component, flag, PackageManager.DONT_KILL_APP);
+
+        if (enable) {
+            Log.d(TAG, "register media button receiver " + component);
+            mAM.registerMediaButtonEventReceiver(component);
+        } else {
+            mAM.unregisterMediaButtonEventReceiver(component);
+        }
+    }
+
     private void resetRDSData() {
         mRdsStationName = null;
         mRdsPTYValue = 0;
         mRdsRadioText = null;
-    }
-
-    private void restoreAudioRoute() {
-        if (am != null) {
-            am.setParameters(LAUNCH_KEY + "=" + LAUNCH_VALUE_OFF);
-            am.setMode(AudioManager.MODE_NORMAL);
-        }
     }
 
     private void setFMVolume(int volume) {
@@ -739,6 +807,47 @@ public class FMRadioPlayerService extends Service {
         }
 
         return cursor;
+    }
+
+    private int getNextPresetFrequency(int preset, boolean searchUpward) {
+        Cursor cursor = getContentResolver().query(Channels.CONTENT_URI, FMUtil.PROJECTION, null, null, null);
+        int bestFrequency = -1, bestPreset = searchUpward ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+
+        if (cursor == null) {
+            return -1;
+        }
+
+        int count = cursor.getCount();
+
+        cursor.moveToFirst();
+        while (!cursor.isAfterLast()) {
+            int currFreq = cursor.getInt(FMUtil.CHANNEL_COLUMN_FREQ);
+            int currPreset = cursor.getInt(FMUtil.CHANNEL_COLUMN_ID);
+
+            if (currFreq == 0 || currPreset == preset) {
+                cursor.moveToNext();
+                continue;
+            }
+
+            if (searchUpward && currPreset < preset) {
+                currPreset += count;
+            } else if (!searchUpward && currPreset > preset) {
+                currPreset -= count;
+            }
+
+            int diff = Math.abs(currPreset - preset);
+            int bestDiff = Math.abs(bestPreset - preset);
+            boolean better = diff < bestDiff;
+
+            if (better) {
+                bestFrequency = currFreq;
+                bestPreset = currPreset;
+            }
+            cursor.moveToNext();
+        }
+
+        cursor.close();
+        return bestFrequency;
     }
 
     private void updateStateIndicators() {
@@ -826,6 +935,60 @@ public class FMRadioPlayerService extends Service {
         return true;
     }
 
+    private void handlePrevNextButton(boolean next) {
+        boolean shouldSeek = false; /* XXX: make me a pref */
+
+        if (!shouldSeek) {
+            Cursor cursor = getCurrentPresetCursor();
+            if (cursor != null) {
+                int currentPreset = cursor.getInt(FMUtil.CHANNEL_COLUMN_ID);
+                int nextPresetFreq = getNextPresetFrequency(currentPreset, next);
+                cursor.close();
+
+                if (nextPresetFreq >= 0) {
+                    shouldSeek = false;
+                    setFMFrequency(nextPresetFreq);
+                }
+            }
+        }
+
+        if (shouldSeek) {
+            Message msg = Message.obtain(mHandler, MSG_SEEK_CHANNEL, next ? 0 : 1, 0, null);
+            mHandler.sendMessage(msg);
+        }
+    }
+
+    private void handleTuneComplete(boolean success, int frequency) {
+        Log.v(TAG, "FM tune complete, success " + success + " frequency " + frequency);
+        mCurFreq = frequency;
+        resetRDSData();
+        if (!success) {
+            notifyTuneResult(false);
+        } else if (!mReady) {
+            int lastFreq = Preferences.getLastFrequency(FMRadioPlayerService.this);
+            if (mCurFreq == lastFreq) {
+                Log.v(TAG, "Finished first tuning, initializing volume");
+                try {
+                    mIFMRadioService.getAudioMode();
+                } catch (RemoteException e) {
+                    Log.e(TAG, "Failed getting audio mode", e);
+                    mAudioMode = 0;
+                    notifyTuneResult(false);
+                }
+                setFMVolume(Preferences.getVolume(FMRadioPlayerService.this));
+                updateStateIndicators();
+            } else {
+                Log.v(TAG, "Initializing tuning to last frequency " + lastFreq);
+                if (!setFMFrequency(lastFreq)) {
+                    notifyTuneResult(false);
+                }
+            }
+        } else {
+            updateStateIndicators();
+            notifyTuneResult(true);
+        }
+    }
+
     private void notifyEnableChangeComplete(boolean enabled, boolean success) {
         if (mCallbacks != null) {
             try {
@@ -870,37 +1033,6 @@ public class FMRadioPlayerService extends Service {
         }
     }
 
-    private void handleTuneComplete(boolean success, int frequency) {
-        Log.v(TAG, "FM tune complete, success " + success + " frequency " + frequency);
-        mCurFreq = frequency;
-        resetRDSData();
-        if (!success) {
-            notifyTuneResult(false);
-        } else if (!mReady) {
-            int lastFreq = Preferences.getLastFrequency(FMRadioPlayerService.this);
-            if (mCurFreq == lastFreq) {
-                Log.v(TAG, "Finished first tuning, initializing volume");
-                try {
-                    mIFMRadioService.getAudioMode();
-                } catch (RemoteException e) {
-                    Log.e(TAG, "Failed getting audio mode", e);
-                    mAudioMode = 0;
-                    notifyTuneResult(false);
-                }
-                setFMVolume(Preferences.getVolume(FMRadioPlayerService.this));
-                updateStateIndicators();
-            } else {
-                Log.v(TAG, "Initializing tuning to last frequency " + lastFreq);
-                if (!setFMFrequency(lastFreq)) {
-                    notifyTuneResult(false);
-                }
-            }
-        } else {
-            updateStateIndicators();
-            notifyTuneResult(true);
-        }
-    }
-
     private boolean enableRds() {
         boolean result = false;
 
@@ -931,138 +1063,5 @@ public class FMRadioPlayerService extends Service {
             Log.e(TAG, "Could not set RSSI", e);
         }
         return false;
-    }
-
-    private void setMediaButtonReceiverEnabled(boolean enable) {
-        int flag = enable
-                ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                : PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
-
-        ComponentName component = new ComponentName(getPackageName(), FMMediaButtonReceiver.class.getName());
-
-        getPackageManager().setComponentEnabledSetting(component, flag, PackageManager.DONT_KILL_APP);
-
-        if (enable) {
-            Log.d(TAG, "register media button receiver " + component);
-            am.registerMediaButtonEventReceiver(component);
-        } else {
-            am.unregisterMediaButtonEventReceiver(component);
-        }
-    }
-
-    private boolean startupFM() {
-        if (mBound) {
-            return true;
-        }
-
-        mBound = bindService(new Intent("com.motorola.android.fmradio.FMRADIO_SERVICE"), mConnection, 1);
-        if (!mBound) {
-            Log.w(TAG, "Powering on FM radio failed");
-            mHandler.sendEmptyMessage(MSG_SHUTDOWN);
-            return false;
-        }
-
-        am.requestAudioFocus(mAudioFocusListener, AudioManager.STREAM_FM, AudioManager.AUDIOFOCUS_GAIN);
-        setMediaButtonReceiverEnabled(true);
-        registerBroadcastListener();
-        registerObserver();
-
-        return true;
-    }
-
-    private void shutdownFM() {
-        if (mBound) {
-            unbindService(mConnection);
-            mBound = false;
-        }
-        if (mReceiver != null) {
-            unregisterReceiver(mReceiver);
-            mReceiver = null;
-        }
-        if (mObserver != null) {
-            getContentResolver().unregisterContentObserver(mObserver);
-        }
-        setMediaButtonReceiverEnabled(false);
-        am.abandonAudioFocus(mAudioFocusListener);
-
-        if (mReady) {
-            restoreAudioRoute();
-        }
-
-        stopForeground(true);
-        updateFmStateBroadcast(false);
-        updateMusicMetadata(null, null, false);
-        notifyEnableChangeComplete(false, true);
-        scheduleShutdown();
-    }
-
-    private void scheduleShutdown() {
-        Message msg = mHandler.obtainMessage(MSG_SHUTDOWN);
-        mHandler.removeMessages(MSG_SHUTDOWN);
-        mHandler.sendMessageDelayed(msg, IDLE_DELAY);
-    }
-
-    private int getNextPresetFrequency(int preset, boolean searchUpward) {
-        Cursor cursor = getContentResolver().query(Channels.CONTENT_URI, FMUtil.PROJECTION, null, null, null);
-        int bestFrequency = -1, bestPreset = searchUpward ? Integer.MAX_VALUE : Integer.MIN_VALUE;
-
-        if (cursor == null) {
-            return -1;
-        }
-
-        int count = cursor.getCount();
-
-        cursor.moveToFirst();
-        while (!cursor.isAfterLast()) {
-            int currFreq = cursor.getInt(FMUtil.CHANNEL_COLUMN_FREQ);
-            int currPreset = cursor.getInt(FMUtil.CHANNEL_COLUMN_ID);
-
-            if (currFreq == 0 || currPreset == preset) {
-                cursor.moveToNext();
-                continue;
-            }
-
-            if (searchUpward && currPreset < preset) {
-                currPreset += count;
-            } else if (!searchUpward && currPreset > preset) {
-                currPreset -= count;
-            }
-
-            int diff = Math.abs(currPreset - preset);
-            int bestDiff = Math.abs(bestPreset - preset);
-            boolean better = diff < bestDiff;
-
-            if (better) {
-                bestFrequency = currFreq;
-                bestPreset = currPreset;
-            }
-            cursor.moveToNext();
-        }
-
-        cursor.close();
-        return bestFrequency;
-    }
-
-    private void handlePrevNextButton(boolean next) {
-        boolean shouldSeek = false; /* XXX: make me a pref */
-
-        if (!shouldSeek) {
-            Cursor cursor = getCurrentPresetCursor();
-            if (cursor != null) {
-                int currentPreset = cursor.getInt(FMUtil.CHANNEL_COLUMN_ID);
-                int nextPresetFreq = getNextPresetFrequency(currentPreset, next);
-                cursor.close();
-
-                if (nextPresetFreq >= 0) {
-                    shouldSeek = false;
-                    setFMFrequency(nextPresetFreq);
-                }
-            }
-        }
-
-        if (shouldSeek) {
-            Message msg = Message.obtain(mHandler, MSG_SEEK_CHANNEL, next ? 0 : 1, 0, null);
-            mHandler.sendMessage(msg);
-        }
     }
 }
