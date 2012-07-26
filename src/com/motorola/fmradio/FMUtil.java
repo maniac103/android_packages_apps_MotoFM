@@ -81,9 +81,7 @@ public class FMUtil {
     }
 
     public static void showNoticeDialog(Context context, int noticeId) {
-        Toast ts = Toast.makeText(context, context.getString(noticeId), Toast.LENGTH_LONG);
-        ts.setGravity(Gravity.CENTER, 0, 0);
-        ts.show();
+        Toast.makeText(context, context.getString(noticeId), Toast.LENGTH_LONG).show();
     }
 
     public static String formatFrequency(Context context, int frequency) {

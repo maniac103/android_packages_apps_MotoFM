@@ -1370,9 +1370,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         }
         sb.append(MessageFormat.format(getString(R.string.scan_result), mScannedStations));
 
-        Toast ts = Toast.makeText(FMRadioMain.this, sb.toString(), Toast.LENGTH_SHORT);
-        ts.setGravity(Gravity.CENTER, 0, 0);
-        ts.show();
+        Toast.makeText(FMRadioMain.this, sb.toString(), Toast.LENGTH_SHORT).show();
 
         mHandler.sendEmptyMessageDelayed(MSG_STOP_SCAN_ANIMATION, SCAN_STOP_DELAY);
 
