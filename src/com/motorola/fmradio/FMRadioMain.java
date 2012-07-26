@@ -212,12 +212,13 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
             }
 
             public void bind(Context context, Cursor cursor) {
-                String frequency = cursor.getString(FMUtil.CHANNEL_COLUMN_FREQ);
                 Log.d(TAG,
                         "cursor pos : " + cursor.getPosition() + ", list pos : "
                                 + mChannelList.getCheckedItemPosition());
+                int frequency = cursor.getInt(FMUtil.CHANNEL_COLUMN_FREQ);
                 boolean selected = cursor.getPosition() == mChannelList.getCheckedItemPosition();
-                mFrequency.setText(Float.valueOf(frequency) / 1000 + "MHz");
+
+                mFrequency.setText(FMUtil.formatFrequency(mContext, frequency));
                 mName.setText(FMUtil.getPresetListString(context, cursor));
 
                 if (selected && Integer.valueOf(frequency) != 0) {
