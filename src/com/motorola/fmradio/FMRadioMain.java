@@ -51,8 +51,6 @@ import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
 import android.widget.ResourceCursorAdapter;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -166,7 +164,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private ImageButton[] mSeekButtons;
     private ImageSwitcher[] mFreqDigits;
     private ImageSwitcher[] mPresetDigits;
-    private RelativeLayout mPresetLayout;
+    private LinearLayout mPresetLayout;
     private SeekBar mSeekBar;
     private MarqueeText mRdsMarqueeText;
     private ImageView mScanBar;
@@ -915,7 +913,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
             switcher.setFactory(this);
         }
 
-        mPresetLayout = (RelativeLayout) findViewById(R.id.preset_swt_layout);
+        mPresetLayout = (LinearLayout) findViewById(R.id.preset_swt_layout);
         mPresetDigits = new ImageSwitcher[2];
         mPresetDigits[0] = (ImageSwitcher) findViewById(R.id.preset_swt1);
         mPresetDigits[1] = (ImageSwitcher) findViewById(R.id.preset_swt2);
@@ -985,7 +983,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         mSeekBar.setEnabled(true);
 
         mScanBar = (ImageView) findViewById(R.id.scan_anim);
-        mScanAnimation = (AnimationDrawable) getResources().getDrawable(R.drawable.fm_progress_red);
+        mScanAnimation = (AnimationDrawable) getResources().getDrawable(R.drawable.fm_progress);
 
         mRdsMarqueeText = (MarqueeText) findViewById(R.id.rds_text);
         mRdsMarqueeText.setTextColor(Color.WHITE);
@@ -1190,7 +1188,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         int dot = isEditEnable ? R.drawable.fm_number_point : R.drawable.fm_number_unselect_point;
 
         mFreqDigits[0].setImageResource(numbers[digit1]);
-        mFreqDigits[0].setVisibility(digit1 == 0 ? View.INVISIBLE : View.VISIBLE);
+        mFreqDigits[0].setVisibility(digit1 == 0 ? View.GONE : View.VISIBLE);
         mFreqDigits[1].setImageResource(numbers[digit2]);
         mFreqDigits[2].setImageResource(numbers[digit3]);
         mFreqDigits[3].setImageResource(dot);
@@ -1210,7 +1208,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         int index1 = index / 10;
         int index2 = index - (index1 * 10);
 
-        mPresetLayout.setBackgroundResource(R.drawable.fm_playing_list_bg);
         mPresetDigits[0].setImageResource(NUMBER_IMAGES_PRESET[index1]);
         mPresetDigits[1].setImageResource(NUMBER_IMAGES_PRESET[index2]);
     }

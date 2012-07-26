@@ -170,7 +170,7 @@
                     android:layout_width="308.0px"
                     android:layout_height="13.0px"
                     android:layout_marginLeft="6.0px"
-                    android:src="@drawable/fm_progress_red_0" />
+                    android:src="@drawable/progress_bar_01" />
 
                 <ImageView
                     android:id="@id/scan_anim"

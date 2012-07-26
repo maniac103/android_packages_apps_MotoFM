@@ -7,57 +7,48 @@
     <RelativeLayout
         android:id="@+id/search_layout"
         android:layout_width="match_parent"
-        android:layout_height="164.0px"
-        android:background="@drawable/fm_background_red" >
+        android:layout_height="120dp"
+        android:background="@drawable/fm_background" >
+
+        <ImageView
+            android:id="@+id/stereo_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:padding="10dp"
+            android:src="@drawable/fm_stereo" />
 
         <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="right"
-            android:layout_marginTop="5.0px"
-            android:gravity="right"
-            android:orientation="horizontal" >
+            android:id="@+id/preset_swt_layout"
+            android:layout_width="21dp"
+            android:layout_height="12dp"
+            android:layout_alignParentRight="true"
+            android:layout_margin="12dp"
+            android:paddingTop="2dp"
+            android:background="@drawable/fm_playing_list_bg"
+            android:orientation="horizontal"
+            android:gravity="center|right" >
 
-            <ImageView
-                android:id="@+id/stereo_status"
+            <ImageSwitcher
+                android:id="@+id/preset_swt1"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginRight="5.0px"
-                android:src="@drawable/fm_stereo" />
+                android:layout_height="wrap_content" />
 
-            <RelativeLayout
-                android:id="@+id/preset_swt_layout"
-                android:layout_width="32.0px"
-                android:layout_height="18.0px"
-                android:layout_marginRight="10.0px"
-                android:layout_marginTop="6.0px"
-                android:orientation="horizontal" >
-
-                <ImageSwitcher
-                    android:id="@+id/preset_swt1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="3.0px"
-                    android:paddingLeft="0.0px"
-                    android:paddingTop="3.0px" />
-
-                <ImageSwitcher
-                    android:id="@+id/preset_swt2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginRight="3.0px"
-                    android:layout_toRightOf="@id/preset_swt1"
-                    android:paddingTop="3.0px" />
-            </RelativeLayout>
+            <ImageSwitcher
+                android:id="@+id/preset_swt2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
         </LinearLayout>
 
         <RelativeLayout
             android:id="@+id/image_number"
             android:layout_width="wrap_content"
-            android:layout_height="71.0px"
-            android:layout_marginTop="32.0px"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="30dp"
+            android:gravity="center"
             android:orientation="horizontal"
-            android:paddingLeft="30.0px" >
+            android:paddingRight="10dp" >
 
             <ImageSwitcher
                 android:id="@+id/Img_switcher1"
@@ -90,46 +81,46 @@
                 android:layout_toRightOf="@id/Img_switcher4" />
         </RelativeLayout>
 
+        <com.motorola.fmradio.MarqueeText
+            android:id="@+id/rds_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/fm_dial"
+            android:layout_marginTop="30dp"
+            android:visibility="gone" />
+
         <LinearLayout
-            android:layout_width="320.0px"
-            android:layout_height="68.0px"
-            android:layout_below="@id/image_number" >
+            android:id="@+id/fm_dial"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true" >
 
             <SeekBar
                 android:id="@+id/seek"
-                android:layout_width="320.0px"
-                android:layout_height="58.0px"
-                android:layout_marginTop="3.0px"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:background="@drawable/fm_background_pointer"
                 android:max="21000"
                 android:progress="500"
+                android:progressDrawable="@drawable/progess_drawable"
                 android:thumb="@drawable/fm_pointer" />
 
-            <com.motorola.fmradio.MarqueeText
-                android:id="@+id/rds_text"
-                android:layout_width="320.0px"
-                android:layout_height="58.0px"
-                android:layout_marginTop="30.0px"
-                android:visibility="gone" />
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/progress_bar_01" />
+
+                <ImageView
+                    android:id="@+id/scan_anim"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </RelativeLayout>
         </LinearLayout>
-    </RelativeLayout>
-
-    <RelativeLayout
-        android:layout_width="314.0px"
-        android:layout_height="13.0px"
-        android:layout_marginTop="1.0px" >
-
-        <ImageView
-            android:layout_width="308.0px"
-            android:layout_height="13.0px"
-            android:layout_marginLeft="6.0px"
-            android:src="@drawable/fm_progress_red_0" />
-
-        <ImageView
-            android:id="@+id/scan_anim"
-            android:layout_width="308.0px"
-            android:layout_height="13.0px"
-            android:layout_marginLeft="6.0px" />
     </RelativeLayout>
 
     <ListView
