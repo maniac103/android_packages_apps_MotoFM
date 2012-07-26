@@ -936,7 +936,7 @@ public class FMRadioPlayerService extends Service {
     }
 
     private void handlePrevNextButton(boolean next) {
-        boolean shouldSeek = false; /* XXX: make me a pref */
+        boolean shouldSeek = !Preferences.mediaButtonPrevNextSwitchesPresets(this);
 
         if (!shouldSeek) {
             Cursor cursor = getCurrentPresetCursor();
@@ -946,9 +946,12 @@ public class FMRadioPlayerService extends Service {
                 cursor.close();
 
                 if (nextPresetFreq >= 0) {
-                    shouldSeek = false;
                     setFMFrequency(nextPresetFreq);
+                } else {
+                    shouldSeek = true;
                 }
+            } else {
+                shouldSeek = true;
             }
         }
 

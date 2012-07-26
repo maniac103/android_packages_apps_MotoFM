@@ -115,7 +115,11 @@
     <string name="seek_sensitivity_entry_medium">Medium</string>
     <string name="seek_sensitivity_entry_weak">Weak</string>
     <string name="seek_sensitivity_entry_veryweak">Very weak</string>
-
+    <string name="button_settings_title">Button behaviour</string>
+    <string name="media_button_title">Media buttons</string>
+    <string name="media_button_summary">Select the behaviour of the previous/next media buttons</string>
+    <string name="media_button_entry_presets">Switch between presets</string>
+    <string name="media_button_entry_seek">Seek stations</string>
     <string name="notice">Notice</string>
     <string name="warning">Warning</string>
     <string name="no_headset_ignore_message">As the headset is used as FM antenna, the reception quality will be significantly degraded if the headset is disconnected.</string>

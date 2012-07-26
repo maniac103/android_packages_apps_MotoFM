@@ -15,4 +15,14 @@
         <item>9</item>
         <item>6</item>
     </string-array>
+
+    <string-array name="media_button_entries" translatable="false">
+        <item>@string/media_button_entry_presets</item>
+        <item>@string/media_button_entry_seek</item>
+    </string-array>
+
+    <string-array name="media_button_values" translatable="false">
+        <item>preset</item>
+        <item>seek</item>
+    </string-array>
 </resources>

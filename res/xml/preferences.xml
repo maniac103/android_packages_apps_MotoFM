@@ -28,4 +28,16 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory android:key="buttons"
+                        android:title="@string/button_settings_title">
+
+        <ListPreference android:key="media_button_behaviour"
+                        android:defaultValue="preset"
+                        android:title="@string/media_button_title"
+                        android:summary="@string/media_button_summary"
+                        android:entries="@array/media_button_entries"
+                        android:entryValues="@array/media_button_values" />
+
+    </PreferenceCategory>
+
 </PreferenceScreen>

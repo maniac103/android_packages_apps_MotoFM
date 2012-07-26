@@ -3,6 +3,7 @@ package com.motorola.fmradio;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.text.TextUtils;
 
 public class Preferences {
     private static final String KEY_VOLUME = "volume";
@@ -13,6 +14,7 @@ public class Preferences {
     private static final String KEY_IGNORE_AIRPLANE_MODE = "ignore_airplane_mode";
     private static final String KEY_IGNORE_NO_HEADSET = "ignore_no_headset";
     private static final String KEY_SEEK_SENSITIVITY = "seek_sensitivity";
+    private static final String KEY_MEDIA_BUTTON_BEHAVIOUR = "media_button_behaviour";
 
     private static final int DEFAULT_VOLUME = 0;
     private static final int DEFAULT_FREQUENCY = FMUtil.MIN_FREQUENCY;
@@ -68,6 +70,11 @@ public class Preferences {
     }
     static public boolean isHeadsetRequired(Context context) {
         return !getPrefs(context).getBoolean(KEY_IGNORE_NO_HEADSET, false);
+    }
+
+    static public boolean mediaButtonPrevNextSwitchesPresets(Context context) {
+        String value = getPrefs(context).getString(KEY_MEDIA_BUTTON_BEHAVIOUR, null);
+        return !TextUtils.equals(value, "seek");
     }
 
     static private SharedPreferences getPrefs(Context context) {

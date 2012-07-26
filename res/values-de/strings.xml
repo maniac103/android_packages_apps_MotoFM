@@ -114,6 +114,11 @@
     <string name="seek_sensitivity_entry_medium">Mittel</string>
     <string name="seek_sensitivity_entry_weak">Schwach</string>
     <string name="seek_sensitivity_entry_veryweak">Sehr schwach</string>
+    <string name="button_settings_title">Tasten</string>
+    <string name="media_button_title">Musiksteuerungs-Tasten</string>
+    <string name="media_button_summary">Verhalten der Musiksteuerungs-Tasten (Zurück/Vorwärts) festlegen</string>
+    <string name="media_button_entry_presets">Voreinstellung umschalten</string>
+    <string name="media_button_entry_seek">Nächsten Sender suchen</string>
 
     <string name="notice">Hinweis</string>
     <string name="warning">Warnung</string>
