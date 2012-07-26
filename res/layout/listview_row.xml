@@ -15,8 +15,7 @@
         android:paddingRight="@dimen/listview_items_padding_right"
         android:paddingTop="@dimen/listview_items_padding_left_top"
         android:singleLine="true"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:textStyle="bold" />
+        android:textAppearance="?android:attr/textAppearanceMedium" />
 
     <TextView
         android:id="@+id/list_frequency"
@@ -30,8 +29,7 @@
         android:paddingRight="@dimen/listview_items_padding_right"
         android:paddingTop="@dimen/listview_items_padding_left_top"
         android:singleLine="true"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:textStyle="bold" />
+        android:textAppearance="?android:attr/textAppearanceSmall"/>
 
     <include layout="@layout/context_menu" />
 
