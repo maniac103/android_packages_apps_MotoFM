@@ -212,9 +212,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
             }
 
             public void bind(Context context, Cursor cursor) {
-                Log.d(TAG,
-                        "cursor pos : " + cursor.getPosition() + ", list pos : "
-                                + mChannelList.getCheckedItemPosition());
                 int frequency = cursor.getInt(FMUtil.CHANNEL_COLUMN_FREQ);
                 boolean selected = cursor.getPosition() == mChannelList.getCheckedItemPosition();
 
@@ -222,7 +219,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 mName.setText(FMUtil.getPresetListString(context, cursor));
 
                 if (selected && Integer.valueOf(frequency) != 0) {
-                    Log.e(TAG, "selected");
                     mPeakOne.setVisibility(View.VISIBLE);
                     mPeakTwo.setVisibility(View.VISIBLE);
                     mPeakOne.setImageResource(R.anim.peak_meter_1);
