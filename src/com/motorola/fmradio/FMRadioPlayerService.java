@@ -66,13 +66,14 @@ public class FMRadioPlayerService extends Service {
     private static final int MSG_SCAN_UPDATE = 4;
     private static final int MSG_SEEK_COMPLETE = 5;
     private static final int MSG_SCAN_COMPLETE = 6;
-    private static final int MSG_UPDATE_AUDIOMODE = 7;
-    private static final int MSG_RDS_PS_UPDATE = 8;
-    private static final int MSG_RDS_RT_UPDATE = 9;
-    private static final int MSG_RDS_PTY_UPDATE = 10;
-    private static final int MSG_RESTORE_AUDIO_AFTER_FOCUS_LOSS = 11;
-    private static final int MSG_SET_ROUTING = 12;
-    private static final int MSG_SHUTDOWN = 13;
+    private static final int MSG_ABORT_COMPLETE = 7;
+    private static final int MSG_UPDATE_AUDIOMODE = 8;
+    private static final int MSG_RDS_PS_UPDATE = 9;
+    private static final int MSG_RDS_RT_UPDATE = 10;
+    private static final int MSG_RDS_PTY_UPDATE = 11;
+    private static final int MSG_RESTORE_AUDIO_AFTER_FOCUS_LOSS = 12;
+    private static final int MSG_SET_ROUTING = 13;
+    private static final int MSG_SHUTDOWN = 14;
 
     private static final int IDLE_DELAY = 10 * 1000;
 
@@ -152,17 +153,11 @@ public class FMRadioPlayerService extends Service {
                     mHandler.sendMessage(msg);
                     break;
                 }
-                case 3:
-                    if (status == 0) {
-                        notifyTuneResult(false);
-                    } else if (mCallbacks != null) {
-                        try {
-                            mCallbacks.onAbortComplete(Integer.parseInt(value));
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "Could not report abort complete", e);
-                        }
-                    }
+                case 3: {
+                    Message msg = Message.obtain(mHandler, MSG_ABORT_COMPLETE, status, Integer.parseInt(value), null);
+                    mHandler.sendMessage(msg);
                     break;
+                }
                 case 4: {
                         Message msg = Message.obtain(mHandler, MSG_RDS_PS_UPDATE, value);
                         mHandler.sendMessage(msg);
@@ -379,9 +374,6 @@ public class FMRadioPlayerService extends Service {
             if (mReady) {
                 result = setFMFrequency(freq);
             }
-            if (result) {
-                resetRDSData();
-            }
             return result;
         }
     };
@@ -406,6 +398,8 @@ public class FMRadioPlayerService extends Service {
                     break;
                 case MSG_SCAN_UPDATE:
                     mCurFreq = msg.arg1;
+                    resetRDSData();
+                    updateStateIndicators();
                     if (mCallbacks != null) {
                         try {
                             mCallbacks.onScanUpdate(mCurFreq);
@@ -434,6 +428,18 @@ public class FMRadioPlayerService extends Service {
                     notifySeekResult(true);
                     if (preFreq != mCurFreq) {
                         updateStateIndicators();
+                    }
+                    break;
+                case MSG_ABORT_COMPLETE:
+                    mCurFreq = msg.arg2;
+                    if (msg.arg1 == 0) {
+                        notifyTuneResult(false);
+                    } else if (mCallbacks != null) {
+                        try {
+                            mCallbacks.onAbortComplete(msg.arg2);
+                        } catch (RemoteException e) {
+                            Log.e(TAG, "Could not report abort complete", e);
+                        }
                     }
                     break;
                 case MSG_UPDATE_AUDIOMODE:
@@ -867,6 +873,7 @@ public class FMRadioPlayerService extends Service {
     private void handleTuneComplete(boolean success, int frequency) {
         Log.v(TAG, "FM tune complete, success " + success + " frequency " + frequency);
         mCurFreq = frequency;
+        resetRDSData();
         if (!success) {
             notifyTuneResult(false);
         } else if (!mReady) {
