@@ -454,7 +454,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         Log.d(TAG, "onCreate()");
         super.onCreate(savedInstanceState);
 
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.main);
         setVolumeControlStream(AudioManager.STREAM_FM);
 
