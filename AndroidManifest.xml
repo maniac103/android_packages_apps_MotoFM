@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+        package="com.motorola.fmradio"
         android:versionCode="7"
-        android:versionName="2.1-update1"
-        package="com.motorola.fmradio">
+        android:versionName="2.1-update1" >
 
-    <uses-sdk android:minSdkVersion="7" android:targetSdkVersion="7" />
+    <uses-sdk
+            android:minSdkVersion="15"
+            android:targetSdkVersion="15" />
+
     <uses-permission android:name="com.motorola.android.permission.USEFMRADIO" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
@@ -26,11 +29,10 @@
                 android:authorities="com.motorola.provider.fmradio" />
 
         <activity
-                android:theme="@style/Theme.noTitle"
-                android:label="@string/app_name"
                 android:name=".FMRadioMain"
-                android:configChanges="orientation">
-
+                android:configChanges="orientation"
+                android:label="@string/app_name"
+                android:theme="@style/Theme" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -39,12 +41,14 @@
         </activity>
 
         <activity
+                android:name=".FMClearChannel"
                 android:label="FMClearChannel"
-                android:name=".FMClearChannel" />
+                android:theme="@style/Theme" />
 
         <activity
+                android:name=".SettingsActivity"
                 android:label="@string/settings_title"
-                android:name=".SettingsActivity" />
+                android:theme="@style/Theme" />
 
         <service
                 android:name="FMRadioPlayerService"

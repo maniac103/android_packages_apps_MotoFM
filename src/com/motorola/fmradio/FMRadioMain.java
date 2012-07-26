@@ -1,4 +1,7 @@
+
 package com.motorola.fmradio;
+
+import java.text.MessageFormat;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -191,23 +194,46 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     private class ChannelListAdapter extends ResourceCursorAdapter {
         private class ViewHolder {
-            private ImageView mIcon;
-            private TextView mChannel;
             private TextView mName;
+            private ImageView mPeakOne;
+            private ImageView mPeakTwo;
+            private TextView mFrequency;
+            private AnimationDrawable mPeakOneAnimation;
+            private AnimationDrawable mPeakTwoAnimation;
 
             public ViewHolder(View view) {
-                mChannel = (TextView) view.findViewById(R.id.list_text);
-                mName = (TextView) view.findViewById(R.id.list_text2);
-                mIcon = (ImageView) view.findViewById(R.id.list_icon);
+                mName = (TextView) view.findViewById(R.id.list_name);
+                // mIcon = (ImageView) view.findViewById(R.id.list_icon);
+                mFrequency = (TextView) view.findViewById(R.id.list_frequency);
+                mPeakOne = (ImageView) view.findViewById(R.id.peak_one);
+                mPeakTwo = (ImageView) view.findViewById(R.id.peak_two);
             }
 
             public void bind(Context context, Cursor cursor) {
-                int id = cursor.getInt(FMUtil.CHANNEL_COLUMN_ID);
+                String frequency = cursor.getString(FMUtil.CHANNEL_COLUMN_FREQ);
+                Log.d(TAG,
+                        "cursor pos : " + cursor.getPosition() + ", list pos : "
+                                + mChannelList.getCheckedItemPosition());
                 boolean selected = cursor.getPosition() == mChannelList.getCheckedItemPosition();
-
-                mIcon.setVisibility(selected ? View.VISIBLE : View.INVISIBLE);
-                mChannel.setText(String.format("%02d", id + 1));
+                mFrequency.setText(Float.valueOf(frequency) / 1000 + "MHz");
                 mName.setText(FMUtil.getPresetListString(context, cursor));
+
+                if (selected && Integer.valueOf(frequency) != 0) {
+                    Log.e(TAG, "selected");
+                    mPeakOne.setVisibility(View.VISIBLE);
+                    mPeakTwo.setVisibility(View.VISIBLE);
+                    mPeakOne.setImageResource(R.anim.peak_meter_1);
+                    mPeakTwo.setImageResource(R.anim.peak_meter_2);
+                    mPeakOneAnimation = (AnimationDrawable) mPeakOne.getDrawable();
+                    mPeakTwoAnimation = (AnimationDrawable) mPeakTwo.getDrawable();
+                    mPeakOneAnimation.start();
+                    mPeakTwoAnimation.start();
+                } else {
+                    mPeakOne.setVisibility(View.INVISIBLE);
+                    mPeakTwo.setVisibility(View.INVISIBLE);
+                    mPeakOne.setImageResource(0);
+                    mPeakTwo.setImageResource(0);
+                }
             }
         }
 
@@ -965,7 +991,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     private void initiateSeek(View v, boolean upward) {
         mPreFreq = mCurFreq;
-        disableUIExceptButton(v);
+        // disableUIExceptButton(v);
         displayRdsScrollText(false);
         startSeek(0, upward);
         mScanBar.setBackgroundDrawable(mScanAnimation);
@@ -973,7 +999,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     }
 
     private void initiateTune(View v, boolean upward) {
-        disableUIExceptButton(v);
+        // disableUIExceptButton(v);
         displayRdsScrollText(false);
         Message msg = Message.obtain(mHandler,
                 MSG_CONTINUE_TUNE, upward ? 1 : 0, 0, null);
@@ -1002,21 +1028,23 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         for (ImageButton button : mSeekButtons) {
             button.setEnabled(enabled);
         }
-        updateButtonDrawables();
+        // updateButtonDrawables();
         if (mChannelList != null) {
             mChannelList.setEnabled(enabled);
         }
     }
 
+    @SuppressWarnings("unused")
     private void disableUIExceptButton(View v) {
         long id = v.getId();
         for (ImageButton button : mSeekButtons) {
             button.setEnabled(button.getId() == id);
         }
-        updateButtonDrawables();
+        // updateButtonDrawables();
         mChannelList.setEnabled(false);
     }
 
+    @SuppressWarnings("unused")
     private void updateButtonDrawables() {
         for (ImageButton button : mSeekButtons) {
             boolean enabled = button.isEnabled();
@@ -1036,7 +1064,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     resId = enabled ? R.drawable.fm_autosearch_plus_enable : R.drawable.fm_autosearch_plus_disable;
                     break;
             }
-            button.setBackgroundResource(resId);
+            button.setImageResource(resId);
         }
     }
 
@@ -1109,6 +1137,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void updateDisplayPanel(int currentFreq, boolean isEditEnable) {
         float progress = currentFreq - RANGE_START;
         mSeekBar.setProgress((int) progress);

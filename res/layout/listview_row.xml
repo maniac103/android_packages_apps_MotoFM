@@ -1,33 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:orientation="horizontal"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content">
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/listview_item_height"
+    android:layout_gravity="center_vertical" >
+
+    <TextView
+        android:id="@+id/list_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:ellipsize="end"
+        android:paddingLeft="@dimen/listview_items_padding_left_top"
+        android:paddingRight="@dimen/listview_items_padding_right"
+        android:paddingTop="@dimen/listview_items_padding_left_top"
+        android:singleLine="true"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/list_frequency"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/list_name"
+        android:ellipsize="end"
+        android:paddingLeft="@dimen/listview_items_padding_left_top"
+        android:paddingRight="@dimen/listview_items_padding_right"
+        android:paddingTop="@dimen/listview_items_padding_left_top"
+        android:singleLine="true"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textStyle="bold" />
+
+    <include layout="@layout/context_menu" />
+
     <ImageView
-            android:id="@+id/list_icon"
-            android:layout_gravity="center_vertical"
-            android:visibility="invisible"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/list_icon_fm_playing" />
-    <TextView
-            android:id="@+id/list_text"
-            android:textSize="20.0sp"
-            android:textColor="#ffffffff"
-            android:gravity="center_vertical"
-            android:layout_gravity="center_vertical"
-            android:layout_width="wrap_content"
-            android:layout_height="45.0dip" />
-    <TextView
-            android:id="@+id/list_text2"
-            android:textSize="20.0sp"
-            android:textColor="#ffffffff"
-            android:gravity="center_vertical"
-            android:layout_gravity="center_vertical"
-            android:layout_width="wrap_content"
-            android:layout_height="45.0dip"
-            android:layout_marginLeft="10.0dip"
-            android:ellipsize="end"
-            android:singleLine="true" />
-</LinearLayout>
+        android:id="@+id/peak_two"
+        style="@style/PeakMeter"
+        android:layout_centerVertical="true"
+        android:paddingRight="@dimen/listview_peak_meter_two_padding_right"
+        android:paddingTop="@dimen/peak_meter_padding_top" />
+
+    <ImageView
+        android:id="@+id/peak_one"
+        style="@style/PeakMeter"
+        android:layout_centerVertical="true"
+        android:paddingRight="@dimen/listview_peak_meter_one_padding_right"
+        android:paddingTop="@dimen/peak_meter_padding_top" />
+
+
+</RelativeLayout>

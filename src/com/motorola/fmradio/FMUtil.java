@@ -49,7 +49,7 @@ public class FMUtil {
             return rdsName;
         }
 
-        return formatFrequency(context, frequency);
+        return "Untitled";
     }
 
     public static String getPresetUiString(Context context, Cursor cursor, int index) {

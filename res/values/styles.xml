@@ -1,7 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme" parent="@android:style/Theme" />
-    <style name="Theme.noTitle" parent="@style/Theme">
-        <item name="android:windowNoTitle">true</item>
+
+    <style name="Theme" parent="@android:style/Theme.Holo.Light" />
+
+    <!-- Now playing indicator -->
+    <style name="PeakMeter">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_alignParentRight">true</item>
     </style>
+
+    <!-- ImageButton in the bottom bar -->
+    <style name="BottomActionBarItem">
+        <item name="android:layout_width">@dimen/bottom_action_bar_item_width</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:paddingLeft">@dimen/bottom_action_bar_item_padding_left_right</item>
+        <item name="android:paddingRight">@dimen/bottom_action_bar_item_padding_left_right</item>
+        <item name="android:background">@drawable/holo_selector</item>
+        <item name="android:gravity">center|right</item>
+    </style>
+
 </resources>
