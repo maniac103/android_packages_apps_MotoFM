@@ -515,6 +515,7 @@ public class FMRadioPlayerService extends Service {
                 case AudioManager.AUDIOFOCUS_LOSS:
                     Log.v(TAG, "AudioFocus: received AUDIOFOCUS_LOSS, turning FM off");
                     if (mBound) {
+                        setFMMuteState(true);
                         shutdownFM();
                     }
                     break;
