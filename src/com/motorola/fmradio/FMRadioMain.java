@@ -212,7 +212,11 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 int frequency = cursor.getInt(FMUtil.CHANNEL_COLUMN_FREQ);
                 boolean selected = cursor.getPosition() == mChannelList.getCheckedItemPosition();
 
-                mFrequency.setText(FMUtil.formatFrequency(mContext, frequency));
+                if (frequency > 0) {
+                    mFrequency.setText(FMUtil.formatFrequency(mContext, frequency));
+                } else {
+                    mFrequency.setText("");
+                }
                 mName.setText(FMUtil.getPresetListString(context, cursor));
                 mQuickContext.setOnClickListener(this);
 
