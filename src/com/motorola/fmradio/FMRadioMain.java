@@ -1037,9 +1037,11 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
      */
     private void showSeekBar(boolean show) {
         mSeekBar.setBackgroundDrawable(show ?
-                getResources().getDrawable(R.drawable.fm_background_pointer) : null);
+                getResources().getDrawable(R.drawable.fm_background_pointer) :
+                getResources().getDrawable(R.drawable.fm_background_pointer_null));
         mSeekBar.setThumb(show ?
-                getResources().getDrawable(R.drawable.fm_pointer) : null);
+                getResources().getDrawable(R.drawable.fm_pointer) :
+                getResources().getDrawable(R.drawable.fm_pointer_null));
     }
 
     /**

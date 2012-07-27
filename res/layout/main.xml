@@ -106,10 +106,11 @@
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_alignParentLeft="true"
+            android:background="@drawable/fm_background_pointer_null"
             android:max="21000"
             android:progress="500"
             android:progressDrawable="@drawable/progess_drawable"
-            android:visibility="invisible" />
+            android:thumb="@drawable/fm_pointer_null" />
     </RelativeLayout>
 
     <ListView
