@@ -11,7 +11,7 @@
     <string name="save_preset">Save Preset</string>
     <string name="clear_presets">Clear Presets</string>
     <string name="scan">Scan</string>
-    <string name="fmradio_save_canceled">Station scan was canceled.</string>
+    <string name="fmradio_save_canceled">Station scan was cancelled.</string>
     <!-- java.text.MessageFormat syntax. Android's plurals don't work for the zero case -->
     <string name="scan_result">{0,choice,0#No stations were|1#1 station was|1&lt;{0} stations were} found.</string>
     <string name="scan_progress">{0,choice,0#No stations found yet|1#Found 1 station|1&lt;Found {0} stations}\u2026</string>
@@ -104,9 +104,9 @@
     <string name="settings_title">Settings</string>
     <string name="general_settings_title">General</string>
     <string name="ignore_airplane_title">Ignore airplane mode</string>
-    <string name="ignore_airplane_summary">Allow operation of FM radio even if airplane mode is enabled</string>
+    <string name="ignore_airplane_summary">Allow operation of FM Radio even if airplane mode is enabled</string>
     <string name="ignore_no_headset_title">Ignore no headset</string>
-    <string name="ignore_no_headset_summary">Allow using the FM radio if no headset is connected. Reception quality will be degraded</string>
+    <string name="ignore_no_headset_summary">Allow using the FM Radio if no headset is connected. Reception quality will be degraded</string>
     <string name="tuning_settings_title">Tuning</string>
     <string name="seek_sensitivity_title">Seek sensitivity</string>
     <string name="seek_sensitivity_summary">Fine-tune the required signal level of the stations when seeking</string>
@@ -123,7 +123,7 @@
     <string name="notice">Notice</string>
     <string name="warning">Warning</string>
     <string name="no_headset_ignore_message">As the headset is used as FM antenna, the reception quality will be significantly degraded if the headset is disconnected.</string>
-    <string name="airplane_ignore_warning_message">The FM radio uses the Bluetooth hardware internally, which may be illegal to use under some conditions, e.g. on a plane.\nDo you really want to enable FM radio operation in airplane mode?</string>
+    <string name="airplane_ignore_warning_message">The FM Radio uses the Bluetooth hardware internally, which may be illegal to use under some conditions, e.g. on a plane.\nDo you really want to enable FM Radio operation in airplane mode?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="interface_settings_title">Interface</string>
