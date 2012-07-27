@@ -89,6 +89,12 @@
             android:layout_alignParentLeft="true"
             android:layout_marginBottom="23dp"
             android:layout_marginLeft="13dp"
+            android:ellipsize="marquee"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:scrollHorizontally="true"
+            android:singleLine="true"
             android:textColor="@color/holo_blue_light"
             android:textSize="10dp"
             android:visibility="visible" />
