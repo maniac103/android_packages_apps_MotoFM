@@ -130,4 +130,7 @@
     <string name="hide_actionbar_summary">Hides the Android Action Bar in main window</string>
     <string name="hide_actionbar_title">Hide Action Bar</string>
     <string name="untitled">Untitled</string>
+    <string name="use_loudspeaker_headset_summary">Uses loudspeaker as default audio device for FM Radio</string>
+    <string name="use_loudspeaker_headset_title">Use loudspeaker</string>
+
 </resources>
