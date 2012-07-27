@@ -6,6 +6,7 @@
 
     <!-- A semi-transparent dark Holo shade of blue -->
     <color name="holo_blue_dark">#ff0099cc</color>
+    <color name="holo_blue_light">#ff8AD5F0</color>
 
     <!-- Transparent -->
     <color name="transparent">#00000000</color>

@@ -24,10 +24,10 @@
             android:layout_height="12dp"
             android:layout_alignParentRight="true"
             android:layout_margin="12dp"
-            android:paddingTop="2dp"
             android:background="@drawable/fm_playing_list_bg"
+            android:gravity="center|right"
             android:orientation="horizontal"
-            android:gravity="center|right" >
+            android:paddingTop="2dp" >
 
             <ImageSwitcher
                 android:id="@+id/preset_swt1"
@@ -81,54 +81,43 @@
                 android:layout_toRightOf="@id/Img_switcher4" />
         </RelativeLayout>
 
-        <com.motorola.fmradio.MarqueeText
+        <TextView
             android:id="@+id/rds_text"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_above="@+id/fm_dial"
-            android:layout_marginTop="30dp"
-            android:visibility="gone" />
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:layout_marginBottom="23dp"
+            android:layout_marginLeft="13dp"
+            android:textColor="@color/holo_blue_light"
+            android:textSize="10dp"
+            android:visibility="visible" />
 
-        <LinearLayout
-            android:id="@+id/fm_dial"
+        <ImageView
+            android:id="@+id/scan_anim"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:layout_alignParentRight="true" >
+            android:layout_alignParentRight="true" />
 
-            <SeekBar
-                android:id="@+id/seek"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/fm_background_pointer"
-                android:max="21000"
-                android:progress="500"
-                android:progressDrawable="@drawable/progess_drawable"
-                android:thumb="@drawable/fm_pointer" />
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" >
-
-                <ImageView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/progress_bar_01" />
-
-                <ImageView
-                    android:id="@+id/scan_anim"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
-            </RelativeLayout>
-        </LinearLayout>
+        <SeekBar
+            android:id="@+id/seek"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:max="21000"
+            android:progress="500"
+            android:progressDrawable="@drawable/progess_drawable"
+            android:visibility="invisible" />
     </RelativeLayout>
 
     <ListView
         android:id="@+id/channel_list"
         android:layout_width="match_parent"
+        android:layout_height="0dp"
         android:layout_marginLeft="10dp"
         android:layout_marginRight="10dp"
-        android:layout_height="0dp"
         android:layout_weight="1.0"
         android:choiceMode="singleChoice" />
 

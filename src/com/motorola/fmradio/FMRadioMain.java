@@ -166,7 +166,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private ImageSwitcher[] mPresetDigits;
     private LinearLayout mPresetLayout;
     private SeekBar mSeekBar;
-    private MarqueeText mRdsMarqueeText;
+    private TextView mRdsMarqueeText;
     private ImageView mScanBar;
     private AnimationDrawable mScanAnimation;
     private ImageView mStereoStatus;
@@ -361,9 +361,10 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     startSeek(0, msg.arg1 != 0);
                     break;
                 case MSG_STOP_SCAN_ANIMATION:
-                    if (mScanBar.getBackground() != null) {
+                    if (mScanBar.getVisibility() == View.VISIBLE) {
                         mScanAnimation.stop();
-                        mScanBar.setBackgroundDrawable(null);
+                        showSeekBar(false);
+                        showSeekAnimation(false);
                         enableUI(true);
                     }
                     break;
@@ -841,6 +842,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {
+        showSeekBar(true);
         mPreFreq = mCurFreq;
     }
 
@@ -867,6 +869,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         if (mCurFreq != mPreFreq) {
             updateFrequency();
         }
+        showSeekBar(false);
     }
 
     @Override
@@ -979,15 +982,15 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     private void initSeekBar() {
         mSeekBar = (SeekBar) findViewById(R.id.seek);
+        mSeekBar.setVisibility(View.VISIBLE);
         mSeekBar.setOnSeekBarChangeListener(this);
         mSeekBar.setEnabled(true);
+        showSeekBar(false);
 
         mScanBar = (ImageView) findViewById(R.id.scan_anim);
         mScanAnimation = (AnimationDrawable) getResources().getDrawable(R.drawable.fm_progress);
 
-        mRdsMarqueeText = (MarqueeText) findViewById(R.id.rds_text);
-        mRdsMarqueeText.setTextColor(Color.WHITE);
-        mRdsMarqueeText.setTextSize(22);
+        mRdsMarqueeText = (TextView) findViewById(R.id.rds_text);
     }
 
     private boolean bindToService() {
@@ -1010,13 +1013,42 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         }
     }
 
+    /**
+     * Start auto seeking
+     *
+     * @param v The button that was pressed
+     * @param upward Scan up or down
+     */
     private void initiateSeek(View v, boolean upward) {
         mPreFreq = mCurFreq;
         // disableUIExceptButton(v);
         displayRdsScrollText(false);
+        showSeekBar(false);
+        showSeekAnimation(true);
         startSeek(0, upward);
         mScanBar.setBackgroundDrawable(mScanAnimation);
         mScanAnimation.start();
+    }
+
+    /**
+     * Show Seek Bar
+     *
+     * @param show show or not.
+     */
+    private void showSeekBar(boolean show) {
+        mSeekBar.setBackgroundDrawable(show ?
+                getResources().getDrawable(R.drawable.fm_background_pointer) : null);
+        mSeekBar.setThumb(show ?
+                getResources().getDrawable(R.drawable.fm_pointer) : null);
+    }
+
+    /**
+     * Show Seek animation
+     *
+     * @param show show or not
+     */
+    private void showSeekAnimation(boolean show) {
+        mScanBar.setVisibility(show ? View.VISIBLE : View.INVISIBLE);
     }
 
     private void initiateTune(View v, boolean upward) {
@@ -1034,12 +1066,10 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
             mRdsRadioText = null;
             mRdsPTYValue = 0;
         }
-        if (mSeekBar != null && mRdsMarqueeText != null) {
+        if (mRdsMarqueeText != null) {
             if (show) {
-                mSeekBar.setVisibility(View.GONE);
                 mRdsMarqueeText.setVisibility(View.VISIBLE);
             } else {
-                mSeekBar.setVisibility(View.VISIBLE);
                 mRdsMarqueeText.setVisibility(View.GONE);
             }
         }
@@ -1207,7 +1237,8 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         }
         int index1 = index / 10;
         int index2 = index - (index1 * 10);
-
+        mPresetLayout.setBackgroundDrawable(getResources()
+                .getDrawable(R.drawable.fm_playing_list_bg));
         mPresetDigits[0].setImageResource(NUMBER_IMAGES_PRESET[index1]);
         mPresetDigits[1].setImageResource(NUMBER_IMAGES_PRESET[index2]);
     }
