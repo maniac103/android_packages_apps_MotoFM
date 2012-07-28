@@ -116,7 +116,7 @@
             android:background="@drawable/fm_background_pointer_null"
             android:max="21000"
             android:progress="500"
-            android:progressDrawable="@drawable/progess_drawable"
+            android:progressDrawable="@drawable/transparent_single_pixel"
             android:thumb="@drawable/fm_pointer_null" />
     </RelativeLayout>
 
