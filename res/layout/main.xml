@@ -5,7 +5,7 @@
     android:orientation="vertical" >
 
     <RelativeLayout
-        android:id="@+id/search_layout"
+        android:id="@+id/fm_panel_layout"
         android:layout_width="match_parent"
         android:layout_height="120dp"
         android:background="@drawable/fm_background" >
