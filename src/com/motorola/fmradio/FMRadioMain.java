@@ -168,6 +168,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private TextView mRdsMarqueeText;
     private ImageView mScanBar;
     private AnimationDrawable mScanAnimationUp;
+    private AnimationDrawable mScanAnimationDown;
     private ImageView mStereoStatus;
 
     private Cursor mCursor;
@@ -373,8 +374,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                     break;
                 case MSG_STOP_SCAN_ANIMATION:
                     if (mScanBar.getVisibility() == View.VISIBLE) {
-                        mScanAnimationUp.stop();
-                        showSeekBar(false);
                         showSeekAnimation(false);
                         enableUI(true);
                     }
@@ -1012,6 +1011,8 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         mScanBar = (ImageView) findViewById(R.id.scan_anim);
         mScanAnimationUp = (AnimationDrawable) getResources()
                 .getDrawable(R.anim.fm_progress_up);
+        mScanAnimationDown = (AnimationDrawable) getResources()
+                .getDrawable(R.anim.fm_progress_down);
 
         mRdsMarqueeText = (TextView) findViewById(R.id.rds_text);
     }
@@ -1047,10 +1048,8 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         // disableUIExceptButton(v);
         displayRdsScrollText(false);
         showSeekBar(false);
-        showSeekAnimation(true);
+        showSeekAnimation(true, upward);
         startSeek(0, upward);
-        mScanBar.setBackgroundDrawable(mScanAnimationUp);
-        mScanAnimationUp.start();
     }
 
     /**
@@ -1068,12 +1067,31 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     }
 
     /**
-     * Show Seek animation
+     * Show/hide Seek animation.
+     *
+     * @param show show or not
+     * @param upward weather animation should move up or down
+     */
+    private void showSeekAnimation(boolean show, boolean upward) {
+        if (show && mScanBar.getVisibility() == View.INVISIBLE) {
+            mScanBar.setBackgroundDrawable(upward ? mScanAnimationUp : mScanAnimationDown);
+            mScanBar.setVisibility(View.VISIBLE);
+            mScanAnimationUp.start();
+        } else if (!show && mScanBar.getVisibility() == View.VISIBLE) {
+            mScanAnimationUp.stop();
+            mScanBar.setVisibility(View.INVISIBLE);
+            mScanBar.setBackgroundDrawable(null);
+        }
+    }
+
+    /**
+     * Show/hide seek animation. Avoid calling showSeekAnimation(true), use
+     * {@link #showSeekAnimation(boolean, boolean)} instead
      *
      * @param show show or not
      */
     private void showSeekAnimation(boolean show) {
-        mScanBar.setVisibility(show ? View.VISIBLE : View.INVISIBLE);
+        showSeekAnimation(show, true);
     }
 
     private void initiateTune(View v, boolean upward) {
