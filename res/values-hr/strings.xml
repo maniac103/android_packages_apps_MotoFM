@@ -102,7 +102,7 @@
     <string name="fm_pty_list_63">Opasnost</string>
 
     <string name="settings_title">Postavke</string>
-    <string name="general_settings_title">Opećito</string>
+    <string name="general_settings_title">Općenito</string>
     <string name="ignore_airplane_title">Ignoriraj mod za rad u avionu</string>
     <string name="ignore_airplane_summary">Dopusti rad FM radia čak i kada je mod za rad u avionu uključen</string>
     <string name="ignore_no_headset_title">Ignoriraj iskopčane slušalice</string>
