@@ -146,10 +146,13 @@ public class MarqueeText extends View {
         boolean superResult = super.onTouchEvent(ev);
         switch (ev.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                mTouchDown = true;
-                mLastX = (int) ev.getX();
-                marqueePause();
-                return true;
+                if (mScrollLength > 0) {
+                    mTouchDown = true;
+                    mLastX = (int) ev.getX();
+                    marqueePause();
+                    return true;
+                }
+                break;
             case MotionEvent.ACTION_MOVE:
                 if (mTouchDown) {
                     int x = (int) ev.getX();
@@ -161,9 +164,12 @@ public class MarqueeText extends View {
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                mTouchDown = false;
-                marqueeResume();
-                return true;
+                if (mTouchDown) {
+                    mTouchDown = false;
+                    marqueeResume();
+                    return true;
+                }
+                break;
         }
 
         return superResult;
