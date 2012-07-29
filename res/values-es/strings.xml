@@ -89,4 +89,36 @@
     <string name="fm_pty_list_61">Tiempo</string>
     <string name="fm_pty_list_62">Prueba de emergencia</string>
     <string name="fm_pty_list_63">Emergencia</string>
+    <string name="settings_title">Ajustes</string>
+    <string name="general_settings_title">Ajustes Generales</string>
+    <string name="ignore_airplane_title">Ignorar modo avión</string>
+    <string name="ignore_airplane_summary">Permitir el uso de la Radio FM aún cuando esté activado el modo avión</string>
+    <string name="ignore_no_headset_title">Ignorar la ausencia de auriculares</string>
+    <string name="ignore_no_headset_summary">Permite el uso de la Radio FM aún cuando los auriculares no están conectados. La calidad en la recepción será menor</string>
+    <string name="tuning_settings_title">Sintonización</string>
+    <string name="seek_sensitivity_title">Sensibilidad de búsqueda</string>
+    <string name="seek_sensitivity_summary">Ajusta el nivel de señal requerido  por las estaciones cuando se sintoniza</string>
+    <string name="seek_sensitivity_entry_verystrong">Muy fuerte</string>
+    <string name="seek_sensitivity_entry_strong">Fuerte</string>
+    <string name="seek_sensitivity_entry_medium">Medio</string>
+    <string name="seek_sensitivity_entry_weak">Débil</string>
+    <string name="seek_sensitivity_entry_veryweak">Muy débil</string>
+    <string name="button_settings_title">Conducta de los Botones</string>
+    <string name="media_button_title">Botones Multimedia</string>
+    <string name="media_button_summary">Selecciona el comportamiento de los botones multimedia</string>
+    <string name="media_button_entry_presets">Cambiar entre emisoras preinst.</string>
+    <string name="media_button_entry_seek">Buscar estaciones</string>
+    <string name="notice">Nota</string>
+    <string name="warning">Precaución</string>
+    <string name="no_headset_ignore_message">Como se utilizan los auriculares como antena FM, la calidad en la recepción será menor si estos se encuentran desconectados.</string>
+    <string name="airplane_ignore_warning_message">La Radio FM utiliza el hardware interno de Bluetooth, podría se ilegal su utilización bajo ciertas condiciones, Por Ej. en un avión.\nDesea realmente activar la Radio FM en el modo avión?</string>
+    <string name="yes">Si</string>
+    <string name="no">No</string>
+    <string name="interface_settings_title">Interfaz</string>
+    <string name="hide_actionbar_summary">Oculta la barra de acción de Android en la ventana principal</string>
+    <string name="hide_actionbar_title">Ocultar barra de acción</string>
+    <string name="untitled">Sin Título</string>
+    <string name="use_loudspeaker_headset_summary">Utilizar altavoz como dispositivo de audo predeterminado para la Radio FM</string>
+    <string name="use_loudspeaker_headset_title">Usar altavoz</string>
+
 </resources>
