@@ -30,7 +30,6 @@ import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.RemoteException;
 import android.provider.Settings;
-import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -59,7 +58,6 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.motorola.fmradio.FMDataProvider.Channels;
-import java.text.MessageFormat;
 
 import java.text.MessageFormat;
 
@@ -177,6 +175,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     private Cursor mCursor;
     private ListView mChannelList;
+    private ActionBar mActionBar;
 
     private IFMRadioPlayerService mService = null;
     private boolean mIsBound = false;
@@ -192,11 +191,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private boolean mScanning = false;
     private int mScannedStations = -1;
     private int mLongPressedButton = 0;
-    private boolean mActionBarHidden = false;
-
-    private SharedPreferences mSharedPrefs;
-
-    private ActionBar mActionBar;
 
     private class ChannelListAdapter extends ResourceCursorAdapter {
         private class ViewHolder {
@@ -457,18 +451,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         Log.d(TAG, "onCreate()");
         super.onCreate(savedInstanceState);
 
-        mSharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-        mSharedPrefs.registerOnSharedPreferenceChangeListener(this);
-
         mActionBar = getActionBar();
-        mActionBarHidden = mSharedPrefs
-                .getBoolean(Preferences.KEY_HIDE_ACTIONBAR, false);
-        // Hide Action bar if user prefers so.
-        if (mActionBarHidden) {
-            mActionBar.hide();
-        } else {
-            mActionBar.show();
-        }
 
         setContentView(R.layout.main);
         setVolumeControlStream(AudioManager.STREAM_FM);
@@ -496,10 +479,23 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     }
 
     @Override
+    protected void onResume() {
+        Preferences.getPrefs(this).registerOnSharedPreferenceChangeListener(this);
+
+        // Hide Action bar if user prefers so.
+        if (Preferences.isActionBarHidden(this)) {
+            mActionBar.hide();
+        } else {
+            mActionBar.show();
+        }
+    }
+
+    @Override
     protected void onPause() {
         Log.d(TAG, "onPause()");
         super.onPause();
 
+        Preferences.getPrefs(this).unregisterOnSharedPreferenceChangeListener(this);
         Preferences.setLastFrequency(this, mCurFreq);
         Preferences.setLastChannel(this, getSelectedPreset());
     }
@@ -877,11 +873,9 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        Log.d(TAG, key+" changed");
-        if (Preferences.KEY_HIDE_ACTIONBAR.equals(key)){
-            mActionBarHidden = sharedPreferences
-                    .getBoolean(Preferences.KEY_HIDE_ACTIONBAR, false);
-            if (mActionBarHidden) {
+        Log.d(TAG, "Shared preference " + key + " changed");
+        if (Preferences.KEY_HIDE_ACTIONBAR.equals(key)) {
+            if (Preferences.isActionBarHidden(this)) {
                 mActionBar.hide();
             } else {
                 mActionBar.show();

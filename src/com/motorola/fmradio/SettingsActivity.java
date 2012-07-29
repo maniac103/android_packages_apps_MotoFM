@@ -73,7 +73,7 @@ public class SettingsActivity extends PreferenceActivity implements OnPreference
             Intent i = new Intent(ACTION_RSSI_UPDATED);
             i.putExtra(EXTRA_RSSI, value);
             sendBroadcast(i);
-        } 
+        }
 
         return true;
     }
