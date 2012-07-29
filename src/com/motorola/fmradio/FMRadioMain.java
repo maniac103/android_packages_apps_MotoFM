@@ -2,16 +2,18 @@
 package com.motorola.fmradio;
 
 import android.app.ActionBar;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.ListActivity;
+import android.app.LoaderManager;
 import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.CursorLoader;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
+import android.content.Loader;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -59,9 +61,10 @@ import com.motorola.fmradio.FMDataProvider.Channels;
 
 import java.text.MessageFormat;
 
-public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeListener,
+public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChangeListener,
         View.OnClickListener, View.OnLongClickListener, View.OnTouchListener,
-        ImageSwitcher.ViewFactory, OnSharedPreferenceChangeListener {
+        ImageSwitcher.ViewFactory, OnSharedPreferenceChangeListener,
+        LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = "FMRadioMain";
 
     private static int LIGHT_ON_TIME = 90000;
@@ -161,6 +164,8 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         R.string.fm_pty_list_63
     };
 
+    private static final int CHANNEL_LIST_LOADER = 0;
+
     private ImageButton[] mSeekButtons;
     private ImageSwitcher[] mFreqDigits;
     private ImageSwitcher[] mPresetDigits;
@@ -173,8 +178,8 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private ImageView mStereoStatus;
     private RelativeLayout mPanelLayout;
 
-    private Cursor mCursor;
     private ListView mChannelList;
+    private ChannelListAdapter mAdapter;
     private ActionBar mActionBar;
 
     private IFMRadioPlayerService mService = null;
@@ -903,6 +908,22 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         }
     }
 
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return new CursorLoader(this, Channels.CONTENT_URI, FMUtil.PROJECTION, null, null, null);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        mAdapter.swapCursor(cursor);
+        setSelectedPreset(Preferences.getLastChannel(this));
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        mAdapter.swapCursor(null);
+    }
+
     private void initUI() {
         initImageSwitcher();
         initPanelLayout();
@@ -973,18 +994,10 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     }
 
     private void initListView() {
-        mChannelList = (ListView) findViewById(R.id.channel_list);
-
-        setSelectedPreset(Preferences.getLastChannel(this));
-
-        mCursor = getContentResolver().query(Channels.CONTENT_URI, FMUtil.PROJECTION, null, null, null);
-        if (mCursor == null) {
-            Log.e(TAG, "Could not fetch channel data");
-            return;
-        }
-        startManagingCursor(mCursor);
-
-        mChannelList.setAdapter(new ChannelListAdapter(this, mCursor));
+        mChannelList = getListView();
+        mAdapter = new ChannelListAdapter(this, null);
+        mChannelList.setAdapter(mAdapter);
+        getLoaderManager().initLoader(CHANNEL_LIST_LOADER, null, this);
         mChannelList.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() {
             @Override
             public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuinfo) {
@@ -1434,7 +1447,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     private void handleRdsDataChanged() {
         Log.v(TAG, "RDS data changed, station " + mRdsStationName + " radio text " +
                 mRdsRadioText + " pty " + mRdsPTYValue);
-
+        Preferences.setLastChannel(this, getSelectedPreset());
         if (!TextUtils.isEmpty(mRdsStationName)) {
             Cursor cursor = getContentResolver().query(Channels.CONTENT_URI, FMUtil.PROJECTION,
                     Channels.FREQUENCY + "=?", new String[] { String.valueOf(mCurFreq) }, null);
