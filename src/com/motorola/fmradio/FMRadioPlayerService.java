@@ -90,6 +90,8 @@ public class FMRadioPlayerService extends Service {
     private boolean mBound = false;
     /* flag indicating whether the hardware is powered */
     private boolean mPowerOn = false;
+    /* flag indicating whether we've lost audio focus */
+    private boolean mLostAudioFocus = false;
     /* flag indicating whether we're on the US band (important for handling RDS data) */
     private boolean mUSBand = false;
 
@@ -514,6 +516,7 @@ public class FMRadioPlayerService extends Service {
             switch (focusChange) {
                 case AudioManager.AUDIOFOCUS_LOSS:
                     Log.v(TAG, "AudioFocus: received AUDIOFOCUS_LOSS, turning FM off");
+                    mLostAudioFocus = true;
                     if (mBound) {
                         setFMMuteState(true);
                         shutdownFM();
@@ -522,6 +525,7 @@ public class FMRadioPlayerService extends Service {
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
                     Log.v(TAG, "AudioFocus: received AUDIOFOCUS_LOSS_TRANSIENT, muting");
+                    mLostAudioFocus = true;
                     if (mReady) {
                         setFMMuteState(true);
                         updateStateIndicators();
@@ -529,6 +533,7 @@ public class FMRadioPlayerService extends Service {
                     break;
                 case AudioManager.AUDIOFOCUS_GAIN:
                     Log.v(TAG, "AudioFocus: received AUDIOFOCUS_GAIN");
+                    mLostAudioFocus = false;
                     if (mReady) {
                         mHandler.sendEmptyMessageDelayed(MSG_RESTORE_AUDIO_AFTER_FOCUS_LOSS, 1000);
                     }
@@ -779,7 +784,7 @@ public class FMRadioPlayerService extends Service {
     private void setFMMuteState(boolean mute) {
         Log.v(TAG, "setFMMuteState (" + mute + ")");
         try {
-            mIFMRadioService.setMute(mute ? 1 : 0);
+            mIFMRadioService.setMute(mute || mLostAudioFocus ? 1 : 0);
             mMuted = mute;
         } catch (RemoteException e) {
             Log.e(TAG, "Setting FM mute state failed", e);
