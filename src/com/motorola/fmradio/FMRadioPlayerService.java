@@ -134,6 +134,7 @@ public class FMRadioPlayerService extends Service {
             }
 
             mIFMRadioService = null;
+            handlePowerOff();
             Log.v(TAG, "Disconnected from FM radio service");
         }
     };
@@ -199,7 +200,7 @@ public class FMRadioPlayerService extends Service {
                     }
                     break;
                 case 10:
-                    mPowerOn = false;
+                    handlePowerOff();
                     break;
                case 15: {
                     Message msg = Message.obtain(mHandler, MSG_UPDATE_AUDIOMODE, Integer.parseInt(value), 0, null);
@@ -313,13 +314,11 @@ public class FMRadioPlayerService extends Service {
         @Override
         public void powerOff() {
             Log.d(TAG, "Got FM radio power off request");
-            if (mReady) {
-                mAM.setMode(AudioManager.MODE_NORMAL);
-                if (mBound) {
-                    unbindService(mConnection);
-                    mBound = false;
-                }
+            if (mBound) {
+                unbindService(mConnection);
+                mBound = false;
             }
+            handlePowerOff();
         }
 
         @Override
@@ -501,7 +500,7 @@ public class FMRadioPlayerService extends Service {
                     }
                     break;
                 case MSG_SHUTDOWN:
-                    if (!mBound && !mInUse) {
+                    if (!mPowerOn && !mInUse) {
                         Log.d(TAG, "Shutting down FM radio player service");
                         stopSelf(mServiceStartId);
                     }
@@ -589,10 +588,15 @@ public class FMRadioPlayerService extends Service {
 
     @Override
     public boolean onUnbind(Intent intent) {
-        Log.d(TAG, "onUnbind()");
+        Log.d(TAG, "onUnbind(), powerOn = " + mPowerOn);
         mInUse = false;
         mCallbacks = null;
-        stopSelf(mServiceStartId);
+
+        /* don't stop service while FM is still playing */
+        if (!mPowerOn) {
+            shutdownFM();
+        }
+
         return true;
     }
 
@@ -995,6 +999,14 @@ public class FMRadioPlayerService extends Service {
         } else {
             updateStateIndicators();
             notifyTuneResult(true);
+        }
+    }
+
+    private void handlePowerOff() {
+        Log.v(TAG, "FM radio hardware powered down");
+        mPowerOn = false;
+        if (!mInUse) {
+            shutdownFM();
         }
     }
 

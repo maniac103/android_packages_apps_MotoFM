@@ -628,6 +628,13 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 break;
             case EXIT_ID:
                 Preferences.setEnabled(this, false);
+                if (mService != null) {
+                    try {
+                        mService.powerOff();
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "Could not power down FM radio", e);
+                    }
+                }
                 finish();
                 break;
             case PREFS_ID:
@@ -954,7 +961,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
             unbindService(mServConnection);
             mIsBound = false;
         }
-        stopService(new Intent(this, FMRadioPlayerService.class));
     }
 
     private void initiateSeek(View v, boolean upward) {
