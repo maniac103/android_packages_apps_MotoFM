@@ -110,15 +110,15 @@
     <string name="media_button_entry_seek">Buscar estaciones</string>
     <string name="notice">Nota</string>
     <string name="warning">Precaución</string>
-    <string name="no_headset_ignore_message">Como se utilizan los auriculares como antena FM, la calidad en la recepción será menor si estos se encuentran desconectados.</string>
-    <string name="airplane_ignore_warning_message">La Radio FM utiliza el hardware interno de Bluetooth, podría se ilegal su utilización bajo ciertas condiciones, Por Ej. en un avión.\nDesea realmente activar la Radio FM en el modo avión?</string>
+    <string name="no_headset_ignore_message">Debido a que se utilizan los auriculares como antena FM, la calidad en la recepción podría ser menor si estos se encuentran desconectados.</string>
+    <string name="airplane_ignore_warning_message">La Radio FM utiliza el hardware interno de Bluetooth, podría ser ilegal su utilización bajo ciertas condiciones, Por Ej. en un avión.\nDesea realmente activar la Radio FM en el modo avión?</string>
     <string name="yes">Si</string>
     <string name="no">No</string>
     <string name="interface_settings_title">Interfaz</string>
     <string name="hide_actionbar_summary">Oculta la barra de acción de Android en la ventana principal</string>
     <string name="hide_actionbar_title">Ocultar barra de acción</string>
     <string name="untitled">Sin Título</string>
-    <string name="use_loudspeaker_headset_summary">Utilizar altavoz como dispositivo de audo predeterminado para la Radio FM</string>
+    <string name="use_loudspeaker_headset_summary">Utilizar altavoz como dispositivo de audio predeterminado para la Radio FM</string>
     <string name="use_loudspeaker_headset_title">Usar altavoz</string>
 
 </resources>
