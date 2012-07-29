@@ -558,6 +558,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                     public void onPresetSaved(int id) {
                         updatePresetSwitcher(id + 1);
                         setSelectedPreset(id);
+                        handleRdsDataChanged();
                     }
 
                     @Override
