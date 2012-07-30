@@ -310,7 +310,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                         dismissDialog(DIALOG_POWERON);
                         enableUI(true);
                         mAM.setStreamVolume(AudioManager.STREAM_FM, Preferences.getVolume(context), 0);
-                        if (isDBEmpty() || !Preferences.isScanned(context)) {
+                        if (!Preferences.isScanned(context) && isDBEmpty()) {
                             showDialog(DIALOG_IF_SCAN_FIRST);
                         }
                     }
