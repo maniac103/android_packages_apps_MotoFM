@@ -118,7 +118,8 @@ public class SaveChannelDialog extends AlertDialog
             }
             cursor.close();
 
-            ArrayAdapter adapter = new ArrayAdapter(context, android.R.layout.simple_spinner_item, results);
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(context,
+                    android.R.layout.simple_spinner_item, results);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
             mPresetSpinner.setAdapter(adapter);

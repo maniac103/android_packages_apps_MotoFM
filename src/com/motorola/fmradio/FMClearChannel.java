@@ -4,32 +4,25 @@ import android.app.ListActivity;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils.TruncateAt;
-import android.util.Log;
 import android.util.SparseBooleanArray;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckedTextView;
 import android.widget.ListView;
-import android.widget.ArrayAdapter;
 
 import com.motorola.fmradio.FMDataProvider.Channels;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 public class FMClearChannel extends ListActivity implements View.OnClickListener {
-    private static final String TAG = "FMClearChannel";
-
     public static final String EXTRA_CLEARED_ALL = "cleared_all";
 
     private static final int CLEAR_ID = 1;
@@ -83,7 +76,8 @@ public class FMClearChannel extends ListActivity implements View.OnClickListener
             cursor.close();
         }
 
-        ArrayAdapter adapter = new ArrayAdapter<String>(this, R.layout.simple_choice, R.id.text1, items) {
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                R.layout.simple_choice, R.id.text1, items) {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 CheckedTextView v = (CheckedTextView) super.getView(position, convertView, parent);
@@ -97,9 +91,12 @@ public class FMClearChannel extends ListActivity implements View.OnClickListener
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
-        menu.add(Menu.NONE, CLEAR_ID, Menu.FIRST, R.string.clear).setIcon(R.drawable.ic_menu_clear_channel);
-        menu.add(Menu.NONE, SELECT_ALL_ID, Menu.FIRST + 1, R.string.select_all).setIcon(R.drawable.ic_menu_select_all);
-        menu.add(Menu.NONE, UNSELECT_ALL_ID, Menu.FIRST + 2, R.string.unselect_all).setIcon(R.drawable.ic_menu_unselect_all);
+        menu.add(Menu.NONE, CLEAR_ID, Menu.FIRST, R.string.clear)
+                .setIcon(R.drawable.ic_menu_clear_channel);
+        menu.add(Menu.NONE, SELECT_ALL_ID, Menu.FIRST + 1, R.string.select_all)
+                .setIcon(R.drawable.ic_menu_select_all);
+        menu.add(Menu.NONE, UNSELECT_ALL_ID, Menu.FIRST + 2, R.string.unselect_all)
+                .setIcon(R.drawable.ic_menu_unselect_all);
         return true;
     }
 

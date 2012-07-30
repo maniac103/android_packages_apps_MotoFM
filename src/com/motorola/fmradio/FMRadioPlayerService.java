@@ -1,7 +1,6 @@
 package com.motorola.fmradio;
 
 import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -22,8 +21,6 @@ import android.os.RemoteException;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.Gravity;
-import android.widget.Toast;
 
 import com.motorola.android.fmradio.IFMRadioService;
 import com.motorola.android.fmradio.IFMRadioServiceCallback;
@@ -166,15 +163,15 @@ public class FMRadioPlayerService extends Service {
                     break;
                 }
                 case 4: {
-                        Message msg = Message.obtain(mHandler, MSG_RDS_PS_UPDATE, value);
-                        mHandler.sendMessage(msg);
-                    }
+                    Message msg = Message.obtain(mHandler, MSG_RDS_PS_UPDATE, value);
+                    mHandler.sendMessage(msg);
                     break;
+                }
                 case 5: {
-                        Message msg = Message.obtain(mHandler, MSG_RDS_RT_UPDATE, value);
-                        mHandler.sendMessage(msg);
-                    }
+                    Message msg = Message.obtain(mHandler, MSG_RDS_RT_UPDATE, value);
+                    mHandler.sendMessage(msg);
                     break;
+                }
                 case 6:
                     if (mUSBand) {
                         String stationName = mIFMRadioService.getRDSStationName();
@@ -183,11 +180,11 @@ public class FMRadioPlayerService extends Service {
                     }
                     break;
                 case 7: {
-                        int newPty = Integer.parseInt(value) + (mUSBand ? 32 : 0);
-                        Message msg = Message.obtain(mHandler, MSG_RDS_PTY_UPDATE, newPty, 0, null);
-                        mHandler.sendMessage(msg);
-                    }
+                    int newPty = Integer.parseInt(value) + (mUSBand ? 32 : 0);
+                    Message msg = Message.obtain(mHandler, MSG_RDS_PTY_UPDATE, newPty, 0, null);
+                    mHandler.sendMessage(msg);
                     break;
+                }
                 case 8:
                     break;
                 case 9:

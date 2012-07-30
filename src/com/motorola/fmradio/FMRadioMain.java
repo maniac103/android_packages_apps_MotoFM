@@ -29,20 +29,14 @@ import android.os.Message;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.RemoteException;
-import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
-import android.view.Gravity;
-import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.FrameLayout;
@@ -209,7 +203,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
 
             public ViewHolder(View view) {
                 mName = (TextView) view.findViewById(R.id.list_name);
-                // mIcon = (ImageView) view.findViewById(R.id.list_icon);
                 mFrequency = (TextView) view.findViewById(R.id.list_frequency);
                 mPeakOne = (ImageView) view.findViewById(R.id.peak_one);
                 mPeakTwo = (ImageView) view.findViewById(R.id.peak_two);
@@ -497,13 +490,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     @Override
     protected void onResume() {
         Preferences.getPrefs(this).registerOnSharedPreferenceChangeListener(this);
-
-        // Hide Action bar if user prefers so.
-        if (Preferences.isActionBarHidden(this)) {
-            mActionBar.hide();
-        } else {
-            mActionBar.show();
-        }
+        setupActionBar();
     }
 
     @Override

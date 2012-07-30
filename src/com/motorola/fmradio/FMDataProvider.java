@@ -8,7 +8,6 @@ import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
@@ -51,12 +50,12 @@ public class FMDataProvider extends ContentProvider {
         @Override
         public void onCreate(SQLiteDatabase db) {
             try {
-                db.execSQL("CREATE TABLE channels (" +
-                        "_id INTEGER PRIMARY KEY," +
-                        "frequency INT NOT NULL DEFAULT 0," +
-                        "name TEXT," +
-                        "rds_name TEXT" +
-                        ");");
+                db.execSQL("CREATE TABLE channels ("
+                        + "_id INTEGER PRIMARY KEY,"
+                        + "frequency INT NOT NULL DEFAULT 0,"
+                        + "name TEXT,"
+                        + "rds_name TEXT"
+                        + ");");
                 for (int i = 0; i < CHANNEL_COUNT; i++) {
                     db.execSQL("insert into channels (_id, frequency, name, rds_name) " +
                             "values(\'" + i + "\', \'0\', \'\', \'\');");
@@ -145,7 +144,7 @@ public class FMDataProvider extends ContentProvider {
 
     private String[] insertSelectionArg(String[] selectionArgs, String arg) {
         if (selectionArgs == null) {
-            return new String[] {arg};
+            return new String[] { arg };
         } else {
             int newLength = selectionArgs.length + 1;
             String[] newSelectionArgs = new String[newLength];

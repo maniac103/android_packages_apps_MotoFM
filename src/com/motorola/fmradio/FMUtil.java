@@ -1,12 +1,9 @@
 package com.motorola.fmradio;
 
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
-import android.net.Uri;
 import android.text.TextUtils;
-import android.view.Gravity;
 import android.widget.Toast;
 
 import java.text.DecimalFormat;
