@@ -194,19 +194,23 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
             private ImageView mIcon;
             private TextView mChannel;
             private TextView mName;
+            private TextView mFrequency;
 
             public ViewHolder(View view) {
-                mChannel = (TextView) view.findViewById(R.id.list_text);
-                mName = (TextView) view.findViewById(R.id.list_text2);
+                mChannel = (TextView) view.findViewById(R.id.list_channel);
+                mName = (TextView) view.findViewById(R.id.list_name);
+                mFrequency = (TextView) view.findViewById(R.id.list_frequency);
                 mIcon = (ImageView) view.findViewById(R.id.list_icon);
             }
 
             public void bind(Context context, Cursor cursor) {
                 int id = cursor.getInt(FMUtil.CHANNEL_COLUMN_ID);
+                int frequency = cursor.getInt(FMUtil.CHANNEL_COLUMN_FREQ);
                 boolean selected = cursor.getPosition() == mChannelList.getCheckedItemPosition();
 
                 mIcon.setVisibility(selected ? View.VISIBLE : View.INVISIBLE);
                 mChannel.setText(String.format("%02d", id + 1));
+                mFrequency.setText(frequency != 0 ? FMUtil.formatFrequency(context, frequency) : null);
                 mName.setText(FMUtil.getPresetListString(context, cursor));
             }
         }

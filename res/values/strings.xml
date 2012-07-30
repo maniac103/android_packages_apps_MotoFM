@@ -126,4 +126,5 @@
     <string name="airplane_ignore_warning_message">The FM radio uses the Bluetooth hardware internally, which may be illegal to use under some conditions, e.g. on a plane.\nDo you really want to enable FM radio operation in airplane mode?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="untitled">Untitled</string>
 </resources>
