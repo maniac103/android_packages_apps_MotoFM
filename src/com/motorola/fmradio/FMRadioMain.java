@@ -489,6 +489,8 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
 
     @Override
     protected void onResume() {
+        Log.d(TAG, "onResume()");
+        super.onResume();
         Preferences.getPrefs(this).registerOnSharedPreferenceChangeListener(this);
         setupActionBar();
     }
