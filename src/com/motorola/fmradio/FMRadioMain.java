@@ -1447,7 +1447,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     private void handleRdsDataChanged() {
         Log.v(TAG, "RDS data changed, station " + mRdsStationName + " radio text " +
                 mRdsRadioText + " pty " + mRdsPTYValue);
-        Preferences.setLastChannel(this, getSelectedPreset());
         if (!TextUtils.isEmpty(mRdsStationName)) {
             Cursor cursor = getContentResolver().query(Channels.CONTENT_URI, FMUtil.PROJECTION,
                     Channels.FREQUENCY + "=?", new String[] { String.valueOf(mCurFreq) }, null);
