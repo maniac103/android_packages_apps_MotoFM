@@ -20,4 +20,20 @@
         <item name="android:gravity">center|right</item>
     </style>
 
+    <!-- Notification bar button -->
+    <style name="StatusBarButton">
+        <item name="android:layout_width">@dimen/status_bar_button_width_height</item>
+        <item name="android:layout_height">@dimen/status_bar_button_width_height</item>
+        <item name="android:layout_gravity">center|right</item>
+        <item name="android:background">?android:listChoiceBackgroundIndicator</item>
+    </style>
+
+    <!-- Notification bar text -->
+    <style name="StatusBarText">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:scrollHorizontally">true</item>
+    </style>
+
 </resources>

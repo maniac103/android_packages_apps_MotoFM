@@ -59,6 +59,9 @@ public class FMMediaButtonReceiver extends BroadcastReceiver {
             case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
                 command = FMRadioPlayerService.COMMAND_PREV;
                 break;
+            case KeyEvent.KEYCODE_MEDIA_STOP:
+                command = FMRadioPlayerService.COMMAND_STOP;
+                break;
         }
 
         Log.v(TAG, "Got media button event: action " + action +

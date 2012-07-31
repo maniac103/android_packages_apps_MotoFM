@@ -104,7 +104,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     private int RANGE_START = 87000;
     private int RATE = 1000;
 
-    private static final String RDS_TEXT_SEPARATOR = "..:";
+    public static final String RDS_TEXT_SEPARATOR = "..:";
 
     private static final int LONG_PRESS_SEEK_TIMEOUT = 1500;
     private static final int LONG_PRESS_TUNE_TIMEOUT = 50;

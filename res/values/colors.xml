@@ -11,4 +11,7 @@
     <!-- Transparent -->
     <color name="transparent">#00000000</color>
 
+    <!-- White -->
+    <color name="white">#ffffffff</color>
+
 </resources>

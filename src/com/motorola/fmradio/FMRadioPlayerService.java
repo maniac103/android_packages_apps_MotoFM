@@ -23,6 +23,7 @@ import android.os.RemoteException;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.RemoteViews;
 
 import com.motorola.android.fmradio.IFMRadioService;
 import com.motorola.android.fmradio.IFMRadioServiceCallback;
@@ -39,6 +40,7 @@ public class FMRadioPlayerService extends Service {
     public static final String COMMAND_TOGGLE_MUTE = "togglemute";
     public static final String COMMAND_NEXT = "next";
     public static final String COMMAND_PREV = "prev";
+    public static final String COMMAND_STOP = "stop";
 
     public static int FM_ROUTING_HEADSET = 0;
     public static int FM_ROUTING_SPEAKER = 1;
@@ -113,7 +115,6 @@ public class FMRadioPlayerService extends Service {
 
     private AudioManager mAM;
     private Notification mNotification;
-    private PendingIntent mActivityIntent;
     private ComponentName mMediaButtonReceiverComponent;
     private RemoteControlClient mRemoteControl;
 
@@ -574,9 +575,10 @@ public class FMRadioPlayerService extends Service {
         launchIntent.setComponent(new ComponentName("com.motorola.fmradio", "com.motorola.fmradio.FMRadioMain"));
         launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
 
-        mActivityIntent = PendingIntent.getActivity(this, 0, launchIntent, 0);
-        mNotification = new Notification(R.drawable.fm_statusbar_icon, null, System.currentTimeMillis());
-        mNotification.flags |= Notification.FLAG_ONGOING_EVENT;
+        mNotification = new Notification();
+        mNotification.flags = Notification.FLAG_ONGOING_EVENT;
+        mNotification.icon = R.drawable.fm_statusbar_icon;
+        mNotification.contentIntent = PendingIntent.getActivity(this, 0, launchIntent, 0);
 
         mMediaButtonReceiverComponent = new ComponentName(getPackageName(), FMMediaButtonReceiver.class.getName());
 
@@ -598,7 +600,6 @@ public class FMRadioPlayerService extends Service {
     public void onDestroy() {
         Log.d(TAG, "onDestroy()");
         super.onDestroy();
-
         shutdownFM();
         restoreAudioRoute();
         mHandler.removeCallbacksAndMessages(null);
@@ -646,6 +647,8 @@ public class FMRadioPlayerService extends Service {
                 handlePrevNextButton(true);
             } else if (COMMAND_PREV.equals(command)) {
                 handlePrevNextButton(false);
+            } else if (COMMAND_STOP.equals(command)) {
+                shutdownFM();
             }
         }
 
@@ -923,8 +926,11 @@ public class FMRadioPlayerService extends Service {
         }
 
         /* TODO: add hint if muted? */
-        mNotification.setLatestEventInfo(this, stationName != null ? stationName : frequencyString,
-                stationName != null ? frequencyString : "", mActivityIntent);
+        RemoteViews views = buildNotificationViews();
+        views.setTextViewText(R.id.status_bar_track_name,
+                stationName != null ? stationName : frequencyString);
+        views.setTextViewText(R.id.status_bar_artist_name,
+                stationName != null ? frequencyString : "");
         startForeground(R.string.app_name, mNotification);
 
         updateFmStateBroadcast(true);
@@ -956,6 +962,24 @@ public class FMRadioPlayerService extends Service {
         editor.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, artist);
         editor.putString(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST, artist);
         editor.apply();
+    }
+
+    private RemoteViews buildNotificationViews() {
+        RemoteViews views = new RemoteViews(getPackageName(), R.layout.status_bar);
+        views.setOnClickPendingIntent(R.id.status_bar_previous, buildServiceIntent(COMMAND_PREV));
+        views.setOnClickPendingIntent(R.id.status_bar_next, buildServiceIntent(COMMAND_NEXT));
+        views.setOnClickPendingIntent(R.id.status_bar_collapse, buildServiceIntent(COMMAND_STOP));
+        mNotification.contentView = views;
+        return views;
+    }
+
+    private PendingIntent buildServiceIntent(String command) {
+        Intent intent = new Intent(this, FMRadioPlayerService.class);
+        intent.setAction(ACTION_FM_COMMAND);
+        intent.putExtra(EXTRA_COMMAND, command);
+
+        return PendingIntent.getService(getApplicationContext(),
+                0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     private void updateFmStateBroadcast(boolean active) {
