@@ -12,18 +12,15 @@ public class FMMediaButtonReceiver extends BroadcastReceiver {
     private static final String TAG = "FMMediaButtonReceiver";
 
     private static final int DOUBLE_CLICK_TIMEOUT = 500;
-    private static final int MSG_DOUBLE_CLICK_TIMEOUT = 1;
+    private static final int MSG_HSH_DOUBLE_CLICK_TIMEOUT = 1;
 
     private static Handler sHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MSG_DOUBLE_CLICK_TIMEOUT:
+                case MSG_HSH_DOUBLE_CLICK_TIMEOUT:
                     Context context = (Context) msg.obj;
-                    String command = keycodeToCommand(msg.arg1);
-                    if (command != null) {
-                        startServiceForCommand(context, command);
-                    }
+                    startServiceForCommand(context, FMRadioPlayerService.COMMAND_TOGGLE_MUTE);
                     break;
             }
         }
@@ -34,20 +31,6 @@ public class FMMediaButtonReceiver extends BroadcastReceiver {
         i.setAction(FMRadioPlayerService.ACTION_FM_COMMAND);
         i.putExtra(FMRadioPlayerService.EXTRA_COMMAND, command);
         context.startService(i);
-    }
-
-    private static String keycodeToCommand(int keycode) {
-        switch (keycode) {
-            case KeyEvent.KEYCODE_HEADSETHOOK:
-            case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-                return FMRadioPlayerService.COMMAND_TOGGLE_MUTE;
-            case KeyEvent.KEYCODE_MEDIA_NEXT:
-                return FMRadioPlayerService.COMMAND_NEXT;
-            case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-                return FMRadioPlayerService.COMMAND_PREV;
-        }
-
-        return null;
     }
 
     @Override
@@ -63,8 +46,20 @@ public class FMMediaButtonReceiver extends BroadcastReceiver {
 
         int keycode = event.getKeyCode();
         int action = event.getAction();
-        long eventtime = event.getEventTime();
-        String command = keycodeToCommand(keycode);
+        String command = null;
+
+        switch (keycode) {
+            case KeyEvent.KEYCODE_HEADSETHOOK:
+            case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+                command = FMRadioPlayerService.COMMAND_TOGGLE_MUTE;
+                break;
+            case KeyEvent.KEYCODE_MEDIA_NEXT:
+                command = FMRadioPlayerService.COMMAND_NEXT;
+                break;
+            case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+                command = FMRadioPlayerService.COMMAND_PREV;
+                break;
+        }
 
         Log.v(TAG, "Got media button event: action " + action +
                 " keycode " + keycode + " -> command " + command);
@@ -74,14 +69,17 @@ public class FMMediaButtonReceiver extends BroadcastReceiver {
         }
 
         if (action == KeyEvent.ACTION_DOWN) {
-            if (keycode == KeyEvent.KEYCODE_HEADSETHOOK &&
-                    sHandler.hasMessages(MSG_DOUBLE_CLICK_TIMEOUT)) {
-                Log.v(TAG, "Detected double click of headset button, sending next command");
-                sHandler.removeMessages(MSG_DOUBLE_CLICK_TIMEOUT);
-                startServiceForCommand(context, FMRadioPlayerService.COMMAND_NEXT);
+            if (keycode == KeyEvent.KEYCODE_HEADSETHOOK) {
+                if (sHandler.hasMessages(MSG_HSH_DOUBLE_CLICK_TIMEOUT)) {
+                    Log.v(TAG, "Detected double click of headset button, sending next command");
+                    sHandler.removeMessages(MSG_HSH_DOUBLE_CLICK_TIMEOUT);
+                    startServiceForCommand(context, FMRadioPlayerService.COMMAND_NEXT);
+                } else {
+                    Message msg = sHandler.obtainMessage(MSG_HSH_DOUBLE_CLICK_TIMEOUT, context);
+                    sHandler.sendMessageDelayed(msg, DOUBLE_CLICK_TIMEOUT);
+                }
             } else {
-                Message msg = sHandler.obtainMessage(MSG_DOUBLE_CLICK_TIMEOUT, keycode, 0, context);
-                sHandler.sendMessageDelayed(msg, DOUBLE_CLICK_TIMEOUT);
+                startServiceForCommand(context, command);
             }
         }
 
