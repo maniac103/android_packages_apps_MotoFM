@@ -185,6 +185,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     private int mCurFreq = FMUtil.MIN_FREQUENCY;
     private int mPreFreq = FMUtil.MIN_FREQUENCY;
+    private boolean mRadioPowered = false;
     private boolean mScanning = false;
     private int mScannedStations = -1;
     private int mLongPressedButton = 0;
@@ -287,7 +288,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                             showDialog(DIALOG_IF_SCAN_FIRST);
                         }
                     }
-                    Preferences.setEnabled(context, msg.arg1 != 0);
+                    mRadioPowered = msg.arg1 != 0;
                     break;
                 case MSG_TUNE_FINISHED:
                     mCurFreq = msg.arg1;
@@ -572,19 +573,18 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         }
         super.onPrepareOptionsMenu(menu);
 
-        boolean fmRadioEnabled = Preferences.isEnabled(this);
         boolean canEditPreset = getSelectedPreset() >= 0;
 
         menu.clear();
         menu.add(Menu.NONE, CLEAR_ID, Menu.FIRST + 1, R.string.clear_presets).setIcon(R.drawable.ic_menu_clear_channel);
         menu.add(Menu.NONE, PREFS_ID, Menu.FIRST + 4, R.string.settings_title).setIcon(android.R.drawable.ic_menu_preferences);
         menu.add(Menu.NONE, EXIT_ID, Menu.FIRST + 5, R.string.exit).setIcon(R.drawable.ic_menu_exit);
-        if (canEditPreset && fmRadioEnabled) {
+        if (canEditPreset && mRadioPowered) {
             menu.add(Menu.NONE, EDIT_ID, Menu.FIRST, R.string.edit_preset).setIcon(R.drawable.ic_menu_edit_preset);
         } else if (!canEditPreset) {
             menu.add(Menu.NONE, SAVE_ID, Menu.FIRST, R.string.save_preset).setIcon(R.drawable.ic_menu_save_channel);
         }
-        if (fmRadioEnabled) {
+        if (mRadioPowered) {
             menu.add(Menu.NONE, SCAN_SAVE_ID, Menu.FIRST + 3, R.string.scan).setIcon(R.drawable.ic_menu_save_channel);
         }
 
@@ -623,7 +623,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 startActivityForResult(clearIntent, CLEAR_CODE);
                 break;
             case EXIT_ID:
-                Preferences.setEnabled(this, false);
                 if (mService != null) {
                     try {
                         mService.powerOff();
@@ -631,6 +630,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                         Log.e(TAG, "Could not power down FM radio", e);
                     }
                 }
+                mRadioPowered = false;
                 finish();
                 break;
             case PREFS_ID:

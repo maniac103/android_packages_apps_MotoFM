@@ -43,13 +43,6 @@ public class Preferences {
         getPrefs(context).edit().putBoolean(KEY_SCANNED, scanned).commit();
     }
 
-    static public boolean isEnabled(Context context) {
-        return getPrefs(context).getBoolean(KEY_ENABLED, false);
-    }
-    static public void setEnabled(Context context, boolean enabled) {
-        getPrefs(context).edit().putBoolean(KEY_ENABLED, enabled).commit();
-    }
-
     static public int getSeekSensitivityThreshold(Context context) {
         String value = getPrefs(context).getString(KEY_SEEK_SENSITIVITY, null);
         if (value == null) {
