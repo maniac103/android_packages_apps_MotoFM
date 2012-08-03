@@ -283,7 +283,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                         Log.d(TAG, "FM radio powered on successfully");
                         dismissDialog(DIALOG_POWERON);
                         enableUI(true);
-                        mAM.setStreamVolume(AudioManager.STREAM_FM, Preferences.getVolume(context), 0);
                         if (!Preferences.isScanned(context) && isDBEmpty()) {
                             showDialog(DIALOG_IF_SCAN_FIRST);
                         }
