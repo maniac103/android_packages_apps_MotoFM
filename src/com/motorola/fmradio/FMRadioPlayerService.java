@@ -219,7 +219,7 @@ public class FMRadioPlayerService extends Service {
                 case 20:
                     resetRDSData();
                     if (!mReady) {
-                        Log.w(TAG, "Complete FM Radio PowerOn Sequence Succeeded!");
+                        Log.d(TAG, "Complete FM Radio PowerOn Sequence Succeeded!");
                         mAM.setParameters(LAUNCH_KEY + "=" + LAUNCH_VALUE_ON);
                         audioPrepare(mAudioRouting);
                         mReady = true;
@@ -407,7 +407,7 @@ public class FMRadioPlayerService extends Service {
                     handleTuneComplete(msg.arg1 != 0, msg.arg2);
                     break;
                 case MSG_SCAN_UPDATE:
-                    mCurFreq = msg.arg1;
+                    updateCurrentFrequency(msg.arg1);
                     resetRDSData();
                     updateStateIndicators();
                     if (mCallbacks != null) {
@@ -432,7 +432,7 @@ public class FMRadioPlayerService extends Service {
                     break;
                 case MSG_SEEK_COMPLETE:
                     int preFreq = mCurFreq;
-                    mCurFreq = msg.arg2;
+                    updateCurrentFrequency(msg.arg2);
                     Log.v(TAG, "Seek completed, success " + (msg.arg1 != 0) + " frequency " + mCurFreq);
                     resetRDSData();
                     notifySeekResult(true);
@@ -441,7 +441,7 @@ public class FMRadioPlayerService extends Service {
                     }
                     break;
                 case MSG_ABORT_COMPLETE:
-                    mCurFreq = msg.arg2;
+                    updateCurrentFrequency(msg.arg2);
                     if (msg.arg1 == 0) {
                         notifyTuneResult(false);
                     } else if (mCallbacks != null) {
@@ -973,7 +973,7 @@ public class FMRadioPlayerService extends Service {
 
     private void handleTuneComplete(boolean success, int frequency) {
         Log.v(TAG, "FM tune complete, success " + success + " frequency " + frequency);
-        mCurFreq = frequency;
+        updateCurrentFrequency(frequency);
         resetRDSData();
         if (!success) {
             notifyTuneResult(false);
@@ -1007,6 +1007,13 @@ public class FMRadioPlayerService extends Service {
         mPowerOn = false;
         if (!mInUse) {
             shutdownFM();
+        }
+    }
+
+    private void updateCurrentFrequency(int frequency) {
+        mCurFreq = frequency;
+        if (mReady) {
+            Preferences.setLastFrequency(this, frequency);
         }
     }
 

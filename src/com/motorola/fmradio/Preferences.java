@@ -36,13 +36,6 @@ public class Preferences {
         }
     }
 
-    static public int getLastChannel(Context context) {
-        return getPrefs(context).getInt(KEY_LAST_CHANNEL, -1);
-    }
-    static public void setLastChannel(Context context, int channel) {
-        getPrefs(context).edit().putInt(KEY_LAST_CHANNEL, channel).commit();
-    }
-
     static public boolean isScanned(Context context) {
         return getPrefs(context).getBoolean(KEY_SCANNED, false);
     }

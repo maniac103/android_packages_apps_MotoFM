@@ -459,15 +459,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
     }
 
     @Override
-    protected void onPause() {
-        Log.d(TAG, "onPause()");
-        super.onPause();
-
-        Preferences.setLastFrequency(this, mCurFreq);
-        Preferences.setLastChannel(this, getSelectedPreset());
-    }
-
-    @Override
     public void onConfigurationChanged(Configuration newConfig) {
         Log.d(TAG, "onConfigurationChanged()");
         super.onConfigurationChanged(newConfig);
@@ -885,8 +876,6 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     private void initListView() {
         mChannelList = (ListView) findViewById(R.id.channel_list);
-
-        setSelectedPreset(Preferences.getLastChannel(this));
 
         mCursor = getContentResolver().query(Channels.CONTENT_URI, FMUtil.PROJECTION, null, null, null);
         if (mCursor == null) {
