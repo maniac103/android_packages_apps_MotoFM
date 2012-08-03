@@ -492,15 +492,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     }
 
     @Override
-    protected void onPause() {
-        Log.d(TAG, "onPause()");
-        super.onPause();
-
-        Preferences.setLastFrequency(this, mCurFreq);
-        Preferences.setLastChannel(this, getSelectedPreset());
-    }
-
-    @Override
     public void onConfigurationChanged(Configuration newConfig) {
         Log.d(TAG, "onConfigurationChanged()");
         super.onConfigurationChanged(newConfig);
