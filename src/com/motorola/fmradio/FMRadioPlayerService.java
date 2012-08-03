@@ -1029,7 +1029,7 @@ public class FMRadioPlayerService extends Service {
                     mAudioMode = 0;
                     notifyTuneResult(false);
                 }
-                setFMVolume(Preferences.getVolume(FMRadioPlayerService.this));
+                mAM.setStreamVolume(AudioManager.STREAM_FM, Preferences.getVolume(this), 0);
                 updateStateIndicators();
             } else {
                 Log.v(TAG, "Initializing tuning to last frequency " + lastFreq);
