@@ -76,16 +76,30 @@ public class FMRadioPlayerService extends Service {
     private IFMRadioService mIFMRadioService = null;
     private IFMRadioPlayerServiceCallbacks mCallbacks = null;
 
-    /* flag indicating that the FM startup sequence is complete */
-    private boolean mReady = false;
+    private static enum State {
+        POWERDOWN,
+        POWERING_UP,
+        PLAYING;
+
+        public boolean isIdle() {
+            return this == POWERDOWN;
+        }
+        public boolean isInitializing() {
+            return this == POWERING_UP;
+        }
+        public boolean isActive() {
+            return this == PLAYING;
+        }
+    };
+
+    private State mState = State.POWERDOWN;
+
     /* flag indicating the current mute state */
     private boolean mMuted = false;
     /* flag indicating whether any client is bound to the service */
     private boolean mInUse = false;
     /* flag indicating whether we're bound to the HW service */
     private boolean mBound = false;
-    /* flag indicating whether the hardware is powered */
-    private boolean mPowerOn = false;
     /* flag indicating whether we've lost audio focus */
     private boolean mLostAudioFocus = false;
     /* flag indicating whether we're on the US band (important for handling RDS data) */
@@ -193,8 +207,6 @@ public class FMRadioPlayerService extends Service {
                 case 9:
                     if (status == 0) {
                         notifyEnableChangeComplete(true, false);
-                    } else {
-                        mPowerOn = true;
                     }
                     break;
                 case 10:
@@ -204,23 +216,26 @@ public class FMRadioPlayerService extends Service {
                     Message msg = Message.obtain(mHandler, MSG_UPDATE_AUDIOMODE, Integer.parseInt(value), 0, null);
                     mHandler.sendMessage(msg);
 
-                    if (mReady || setSeekSensitivity(Preferences.getSeekSensitivityThreshold(context))) {
+                    if (!mState.isInitializing()) {
+                        break;
+                    }
+                    if (setSeekSensitivity(Preferences.getSeekSensitivityThreshold(context))) {
                         break;
                     }
                     /* otherwise fall-through intended, failure to set RSSI is non-fatal */
                 }
                 case 23:
-                    if (!mReady && !enableRds()) {
+                    if (mState.isInitializing() && !enableRds()) {
                         notifyTuneResult(false);
                     }
                     break;
                 case 20:
                     resetRDSData();
-                    if (!mReady) {
-                        Log.d(TAG, "Complete FM Radio PowerOn Sequence Succeeded!");
+                    if (mState.isInitializing()) {
+                        Log.d(TAG, "Finished powering on the FM radio");
                         mAM.setParameters(LAUNCH_KEY + "=" + LAUNCH_VALUE_ON);
                         audioPrepare(mAudioRouting);
-                        mReady = true;
+                        transitionToState(State.PLAYING);
                         notifyEnableChangeComplete(true, true);
                     }
                     break;
@@ -278,7 +293,10 @@ public class FMRadioPlayerService extends Service {
         @Override
         public boolean powerOn() {
             Log.d(TAG, "Got FM radio power on request");
-            if (mPowerOn) {
+            if (mState.isInitializing()) {
+                return true;
+            }
+            if (mState.isActive()) {
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
@@ -322,7 +340,7 @@ public class FMRadioPlayerService extends Service {
         @Override
         public boolean scan() {
             Log.d(TAG, "Got scan request");
-            if (mReady) {
+            if (mState.isActive()) {
                 try {
                     return mIFMRadioService.scan();
                 } catch (RemoteException e) {
@@ -335,11 +353,12 @@ public class FMRadioPlayerService extends Service {
         @Override
         public boolean seek(int freq, boolean upward) {
             Log.d(TAG, "Got seek request, frequency " + freq + " upward " + upward);
-            if (mReady) {
+            if (mState.isActive()) {
                 Message msg = Message.obtain(mHandler, MSG_SEEK_CHANNEL, upward ? 0 : 1, 0, null);
                 mHandler.sendMessage(msg);
+                return true;
             }
-            return mReady;
+            return false;
         }
 
         @Override
@@ -352,7 +371,7 @@ public class FMRadioPlayerService extends Service {
         @Override
         public boolean stopScan() {
             Log.d(TAG, "Got stop scan request");
-            if (mReady) {
+            if (mState.isActive()) {
                 try {
                     return mIFMRadioService.stopScan();
                 } catch (RemoteException e) {
@@ -365,7 +384,7 @@ public class FMRadioPlayerService extends Service {
         @Override
         public boolean stopSeek() {
             Log.d(TAG, "Got stop seek request");
-            if (mReady) {
+            if (mState.isActive()) {
                 try {
                     return mIFMRadioService.stopSeek();
                 } catch (RemoteException e) {
@@ -379,7 +398,7 @@ public class FMRadioPlayerService extends Service {
         public boolean tune(int freq) {
             Log.d(TAG, "Got tune request, frequency " + freq);
             boolean result = false;
-            if (mReady) {
+            if (mState.isActive()) {
                 result = setFMFrequency(freq);
             }
             return result;
@@ -492,13 +511,13 @@ public class FMRadioPlayerService extends Service {
                 case MSG_SET_ROUTING:
                     if (msg.arg1 == FM_ROUTING_HEADSET || msg.arg1 == FM_ROUTING_SPEAKER) {
                         mAudioRouting = msg.arg1;
-                        if (mReady) {
+                        if (mState.isActive()) {
                             audioPrepare(mAudioRouting);
                         }
                     }
                     break;
                 case MSG_SHUTDOWN:
-                    if (!mPowerOn && !mInUse) {
+                    if (mState.isIdle() && !mInUse) {
                         Log.d(TAG, "Shutting down FM radio player service");
                         stopSelf(mServiceStartId);
                     }
@@ -523,7 +542,7 @@ public class FMRadioPlayerService extends Service {
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
                     Log.v(TAG, "AudioFocus: received AUDIOFOCUS_LOSS_TRANSIENT, muting");
                     mLostAudioFocus = true;
-                    if (mReady) {
+                    if (mState.isActive()) {
                         setFMMuteState(true);
                         updateStateIndicators();
                     }
@@ -531,7 +550,7 @@ public class FMRadioPlayerService extends Service {
                 case AudioManager.AUDIOFOCUS_GAIN:
                     Log.v(TAG, "AudioFocus: received AUDIOFOCUS_GAIN");
                     mLostAudioFocus = false;
-                    if (mReady) {
+                    if (mState.isActive()) {
                         mHandler.sendEmptyMessageDelayed(MSG_RESTORE_AUDIO_AFTER_FOCUS_LOSS, 1000);
                     }
                     break;
@@ -602,12 +621,12 @@ public class FMRadioPlayerService extends Service {
 
     @Override
     public boolean onUnbind(Intent intent) {
-        Log.d(TAG, "onUnbind(), powerOn = " + mPowerOn);
+        Log.d(TAG, "onUnbind()");
         mInUse = false;
         mCallbacks = null;
 
         /* don't stop service while FM is still playing */
-        if (!mPowerOn) {
+        if (mState.isIdle()) {
             shutdownFM();
         }
 
@@ -618,7 +637,7 @@ public class FMRadioPlayerService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         mServiceStartId = startId;
 
-        if (intent != null && TextUtils.equals(intent.getAction(), ACTION_FM_COMMAND) && mReady) {
+        if (intent != null && TextUtils.equals(intent.getAction(), ACTION_FM_COMMAND) && mState.isActive()) {
             String command = intent.getStringExtra(EXTRA_COMMAND);
             if (COMMAND_TOGGLE_MUTE.equals(command)) {
                 setFMMuteState(!mMuted);
@@ -648,7 +667,7 @@ public class FMRadioPlayerService extends Service {
     }
 
     private boolean startupFM() {
-        if (mBound) {
+        if (!mState.isIdle()) {
             return true;
         }
 
@@ -659,6 +678,7 @@ public class FMRadioPlayerService extends Service {
             return false;
         }
 
+        transitionToState(State.POWERING_UP);
         mAM.requestAudioFocus(mAudioFocusListener, AudioManager.STREAM_FM, AudioManager.AUDIOFOCUS_GAIN);
         setMediaButtonReceiverEnabled(true);
         registerBroadcastReceiver();
@@ -682,8 +702,9 @@ public class FMRadioPlayerService extends Service {
         setMediaButtonReceiverEnabled(false);
         mAM.abandonAudioFocus(mAudioFocusListener);
 
-        if (mReady) {
+        if (!mState.isIdle()) {
             restoreAudioRoute();
+            transitionToState(State.POWERDOWN);
         }
 
         stopForeground(true);
@@ -750,7 +771,7 @@ public class FMRadioPlayerService extends Service {
                         Preferences.setVolume(FMRadioPlayerService.this, volume);
                         setFMVolume(volume);
                     }
-                } else if (mReady && action.equals(SettingsActivity.ACTION_RSSI_UPDATED)) {
+                } else if (mState.isActive() && action.equals(SettingsActivity.ACTION_RSSI_UPDATED)) {
                     setSeekSensitivity(intent.getIntExtra(SettingsActivity.EXTRA_RSSI, -1));
                 }
             }
@@ -909,7 +930,7 @@ public class FMRadioPlayerService extends Service {
         updateFmStateBroadcast(true);
 
         /* fake a music state change to make the FM state appear on the lockscreen */
-        if (mReady && !mMuted) {
+        if (mState.isActive() && !mMuted) {
             StringBuilder sb = new StringBuilder();
             if (stationName != null) {
                 sb.append(stationName);
@@ -997,7 +1018,7 @@ public class FMRadioPlayerService extends Service {
         resetRDSData();
         if (!success) {
             notifyTuneResult(false);
-        } else if (!mReady) {
+        } else if (mState.isInitializing()) {
             int lastFreq = Preferences.getLastFrequency(FMRadioPlayerService.this);
             if (mCurFreq == lastFreq) {
                 Log.v(TAG, "Finished first tuning, initializing volume");
@@ -1024,7 +1045,7 @@ public class FMRadioPlayerService extends Service {
 
     private void handlePowerOff() {
         Log.v(TAG, "FM radio hardware powered down");
-        mPowerOn = false;
+        transitionToState(State.POWERDOWN);
         if (!mInUse) {
             shutdownFM();
         }
@@ -1032,8 +1053,15 @@ public class FMRadioPlayerService extends Service {
 
     private void updateCurrentFrequency(int frequency) {
         mCurFreq = frequency;
-        if (mReady) {
+        if (mState.isActive()) {
             Preferences.setLastFrequency(this, frequency);
+        }
+    }
+
+    private void transitionToState(State state) {
+        if (mState != state) {
+            Log.v(TAG, "Transitioning state: " + mState + " -> " + state);
+            mState = state;
         }
     }
 
