@@ -14,6 +14,8 @@ import android.database.ContentObserver;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
+import android.media.MediaMetadataRetriever;
+import android.media.RemoteControlClient;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -31,7 +33,6 @@ public class FMRadioPlayerService extends Service {
 
     private static final String ACTION_AUDIOPATH_BUSY = "android.intent.action.AudioPathBusy";
     private static final String ACTION_AUDIOPATH_FREE = "android.intent.action.AudioPathFree";
-    private static final String ACTION_MUSIC_META_CHANGED = "com.android.music.metachanged";
     public static final String ACTION_FM_COMMAND = "com.motorola.fmradio.SERVICE_COMMAND";
 
     public static final String EXTRA_COMMAND = "command";
@@ -99,6 +100,8 @@ public class FMRadioPlayerService extends Service {
     private AudioManager mAM;
     private Notification mNotification;
     private PendingIntent mActivityIntent;
+    private ComponentName mMediaButtonReceiverComponent;
+    private RemoteControlClient mRemoteControl;
 
     private int mCurFreq;
     private String mRdsStationName;
@@ -555,6 +558,21 @@ public class FMRadioPlayerService extends Service {
         mActivityIntent = PendingIntent.getActivity(this, 0, launchIntent, 0);
         mNotification = new Notification(R.drawable.fm_statusbar_icon, null, System.currentTimeMillis());
         mNotification.flags |= Notification.FLAG_ONGOING_EVENT;
+
+        mMediaButtonReceiverComponent = new ComponentName(getPackageName(), FMMediaButtonReceiver.class.getName());
+
+        Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
+        mediaButtonIntent.setComponent(mMediaButtonReceiverComponent);
+
+        PendingIntent mediaPendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0,
+                mediaButtonIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        mRemoteControl = new RemoteControlClient(mediaPendingIntent);
+        mRemoteControl.setTransportControlFlags(
+                RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS |
+                RemoteControlClient.FLAG_KEY_MEDIA_NEXT |
+                RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE |
+                RemoteControlClient.FLAG_KEY_MEDIA_STOP);
     }
 
     @Override
@@ -670,7 +688,7 @@ public class FMRadioPlayerService extends Service {
 
         stopForeground(true);
         updateFmStateBroadcast(false);
-        updateMusicMetadata(null, null, false);
+        updateRemoteControl(null, null, false);
         notifyEnableChangeComplete(false, true);
         scheduleShutdown();
     }
@@ -761,7 +779,9 @@ public class FMRadioPlayerService extends Service {
         if (enable) {
             Log.d(TAG, "register media button receiver " + component);
             mAM.registerMediaButtonEventReceiver(component);
+            mAM.registerRemoteControlClient(mRemoteControl);
         } else {
+            mAM.unregisterRemoteControlClient(mRemoteControl);
             mAM.unregisterMediaButtonEventReceiver(component);
         }
     }
@@ -899,18 +919,22 @@ public class FMRadioPlayerService extends Service {
             } else {
                 sb.append(frequencyString);
             }
-            updateMusicMetadata(getString(R.string.app_name), sb.toString(), true);
+            updateRemoteControl(getString(R.string.app_name), sb.toString(), true);
         } else {
-            updateMusicMetadata(null, null, false);
+            updateRemoteControl(null, null, false);
         }
     }
 
-    private void updateMusicMetadata(String artist, String title, boolean active) {
-        Intent intent = new Intent(ACTION_MUSIC_META_CHANGED);
-        intent.putExtra("artist", artist);
-        intent.putExtra("track", title);
-        intent.putExtra("playing", active);
-        sendStickyBroadcast(intent);
+    private void updateRemoteControl(String artist, String title, boolean active) {
+        mRemoteControl.setPlaybackState(active
+                ? RemoteControlClient.PLAYSTATE_PLAYING
+                : RemoteControlClient.PLAYSTATE_PAUSED);
+
+        RemoteControlClient.MetadataEditor editor = mRemoteControl.editMetadata(true);
+        editor.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, title);
+        editor.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, artist);
+        editor.putString(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST, artist);
+        editor.apply();
     }
 
     private void updateFmStateBroadcast(boolean active) {
