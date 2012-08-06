@@ -695,8 +695,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                 int routing = item.getItemId() == BY_LOUDSPEAKER_ID
                         ? FMRadioPlayerService.FM_ROUTING_SPEAKER
                         : FMRadioPlayerService.FM_ROUTING_HEADSET;
-                mSharedPrefs.edit().putBoolean(Preferences.KEY_USE_LOUDSPEAKER,
-                        item.getItemId() == BY_LOUDSPEAKER_ID ? true : false).apply();
+                Preferences.setUseSpeakerByDefault(this, item.getItemId() == BY_LOUDSPEAKER_ID);
                 try {
                     mService.setAudioRouting(routing);
                 } catch (RemoteException e) {
@@ -945,7 +944,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
      * Hide Action bar if user prefers so.
      */
     private void setupActionBar() {
-        if (Preferences.hideActionBar(this)) {
+        if (Preferences.isActionBarHidden(this)) {
             mPanelLayout.setBackgroundDrawable(getResources()
                     .getDrawable(R.drawable.fm_background_noactionbar));
             if (mActionBar.isShowing()) {

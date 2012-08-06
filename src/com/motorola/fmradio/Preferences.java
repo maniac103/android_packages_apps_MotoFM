@@ -77,6 +77,7 @@ public class Preferences {
     static public boolean mediaButtonPrevNextSwitchesPresets(Context context) {
         String value = getPrefs(context).getString(KEY_MEDIA_BUTTON_BEHAVIOUR, null);
         return !TextUtils.equals(value, "seek");
+    }
 
     static public boolean isActionBarHidden(Context context) {
         return getPrefs(context).getBoolean(KEY_HIDE_ACTIONBAR, false);
@@ -84,6 +85,9 @@ public class Preferences {
 
     static public boolean useSpeakerByDefault(Context context) {
         return getPrefs(context).getBoolean(KEY_USE_LOUDSPEAKER, false);
+    }
+    static public void setUseSpeakerByDefault(Context context, boolean useSpeaker) {
+        getPrefs(context).edit().putBoolean(KEY_USE_LOUDSPEAKER, useSpeaker).commit();
     }
 
     static public SharedPreferences getPrefs(Context context) {
