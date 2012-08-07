@@ -127,4 +127,15 @@
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="untitled">Untitled</string>
+    <string name="backup_restore_title">Backup &amp; Restore</string>
+    <string name="backup_presets_title">Backup presets</string>
+    <string name="backup_presets_summary">Backup the current list of presets to the SD card</string>
+    <string name="backup_presets_dialog_message">Please enter a name for the preset backup.</string>
+    <string name="backup_presets_success_toast">Preset list backed up successfully.</string>
+    <string name="backup_presets_failure_toast">Backing up the preset list failed.</string>
+    <string name="restore_presets_title">Restore presets</string>
+    <string name="restore_presets_summary">Replace the preset list with a previously backed up one</string>
+    <string name="restore_presets_success_toast">The preset backup with %1$d presets was restored successfully.</string>
+    <string name="restore_presets_failure_toast">Restoring the preset list from the backup failed.</string>
+    <string name="select_backup">Select backup</string>
 </resources>
