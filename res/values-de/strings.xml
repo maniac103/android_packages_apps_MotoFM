@@ -126,4 +126,16 @@
     <string name="airplane_ignore_warning_message">Das FM-Radio benutzt intern die Bluetooth-Hardware des Telefons, deren Benutzung unter Umständen, z.B. im Flugzeug, illegal sein kann.\nMöchten Sie die Benutzung des FM-Radios im Flugmodus wirklich erlauben?</string>
     <string name="yes">Ja</string>
     <string name="no">Nein</string>
+    <string name="untitled">Unbenannt</string>
+    <string name="backup_restore_title">Sichern &amp; Wiederherstellen</string>
+    <string name="backup_presets_title">Voreinst. sichern</string>
+    <string name="backup_presets_summary">Liste der Voreinstellungen auf die Speicherkarte sichern</string>
+    <string name="backup_presets_dialog_message">Geben Sie bitte einen Namen für die Sicherung ein.</string>
+    <string name="backup_presets_success_toast">Die Sicherung der Voreinstellungen war erfolgreich.</string>
+    <string name="backup_presets_failure_toast">Während der Sicherung der Voreinstellungen ist ein Fehler aufgetreten.</string>
+    <string name="restore_presets_title">Voreinst. wiederherstellen</string>
+    <string name="restore_presets_summary">Liste der Voreinstellungen mit einem vorherigen Backup ersetzen</string>
+    <string name="restore_presets_success_toast">Die Sicherung mit %1$d Voreinstellungen wurde erfolgreich wiederhergestellt.</string>
+    <string name="restore_presets_failure_toast">Die Sicherung konnte nicht wiederhergestellt werden.</string>
+    <string name="select_backup">Sicherung auswählen</string>
 </resources>

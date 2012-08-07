@@ -47,6 +47,22 @@
                             android:key="hide_actionbar"
                             android:summary="@string/hide_actionbar_summary"
                             android:title="@string/hide_actionbar_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:key="backup_restore"
+                        android:title="@string/backup_restore_title">
+
+        <EditTextPreference android:key="backup_presets"
+                            android:persistent="false"
+                            android:dialogMessage="@string/backup_presets_dialog_message"
+                            android:title="@string/backup_presets_title"
+                            android:summary="@string/backup_presets_summary" />
+
+        <ListPreference android:key="restore_presets"
+                        android:persistent="false"
+                        android:dialogTitle="@string/select_backup"
+                        android:title="@string/restore_presets_title"
+                        android:summary="@string/restore_presets_summary" />
 
     </PreferenceCategory>
 
