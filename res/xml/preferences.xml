@@ -14,11 +14,6 @@
                             android:title="@string/ignore_no_headset_title"
                             android:summary="@string/ignore_no_headset_summary" />
 
-        <CheckBoxPreference android:key="use_loudspeaker"
-                            android:defaultValue="false"
-                            android:title="@string/use_loudspeaker_headset_title"
-                            android:summary="@string/use_loudspeaker_headset_summary" />
-
     </PreferenceCategory>
 
     <PreferenceCategory android:key="tuning"

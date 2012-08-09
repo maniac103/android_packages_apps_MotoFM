@@ -83,10 +83,10 @@ public class Preferences {
         return getPrefs(context).getBoolean(KEY_HIDE_ACTIONBAR, false);
     }
 
-    static public boolean useSpeakerByDefault(Context context) {
+    static public boolean useSpeakerAsOutput(Context context) {
         return getPrefs(context).getBoolean(KEY_USE_LOUDSPEAKER, false);
     }
-    static public void setUseSpeakerByDefault(Context context, boolean useSpeaker) {
+    static public void setUseSpeaker(Context context, boolean useSpeaker) {
         getPrefs(context).edit().putBoolean(KEY_USE_LOUDSPEAKER, useSpeaker).commit();
     }
 

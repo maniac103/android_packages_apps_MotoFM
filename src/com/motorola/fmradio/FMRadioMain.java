@@ -695,7 +695,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                 int routing = item.getItemId() == BY_LOUDSPEAKER_ID
                         ? FMRadioPlayerService.FM_ROUTING_SPEAKER
                         : FMRadioPlayerService.FM_ROUTING_HEADSET;
-                Preferences.setUseSpeakerByDefault(this, item.getItemId() == BY_LOUDSPEAKER_ID);
+                Preferences.setUseSpeaker(this, item.getItemId() == BY_LOUDSPEAKER_ID);
                 try {
                     mService.setAudioRouting(routing);
                 } catch (RemoteException e) {
@@ -885,15 +885,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         Log.d(TAG, "Shared preference " + key + " changed");
         if (Preferences.KEY_HIDE_ACTIONBAR.equals(key)){
             setupActionBar();
-        } else if (Preferences.KEY_USE_LOUDSPEAKER.equals(key)) {
-            int routing = Preferences.useSpeakerByDefault(this)
-                    ? FMRadioPlayerService.FM_ROUTING_SPEAKER
-                    : FMRadioPlayerService.FM_ROUTING_HEADSET;
-            try {
-                mService.setAudioRouting(routing);
-            } catch (RemoteException e) {
-                Log.d(TAG, "Failed to re-route audio");
-            }
         }
     }
 

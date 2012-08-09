@@ -545,7 +545,7 @@ public class FMRadioPlayerService extends Service {
         super.onCreate();
 
         mAM = (AudioManager) getSystemService(AUDIO_SERVICE);
-        mAudioRouting = Preferences.useSpeakerByDefault(this) ? FM_ROUTING_SPEAKER : FM_ROUTING_HEADSET;
+        mAudioRouting = Preferences.useSpeakerAsOutput(this) ? FM_ROUTING_SPEAKER : FM_ROUTING_HEADSET;
 
         scheduleShutdown();
 
