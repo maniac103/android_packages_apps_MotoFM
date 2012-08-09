@@ -15,8 +15,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.Loader;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.drawable.AnimationDrawable;
@@ -57,8 +55,7 @@ import java.text.MessageFormat;
 
 public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChangeListener,
         View.OnClickListener, View.OnLongClickListener, View.OnTouchListener,
-        ImageSwitcher.ViewFactory, OnSharedPreferenceChangeListener,
-        LoaderManager.LoaderCallbacks<Cursor> {
+        ImageSwitcher.ViewFactory, LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = "FMRadioMain";
 
     private static int LIGHT_ON_TIME = 90000;
@@ -491,7 +488,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     protected void onResume() {
         Log.d(TAG, "onResume()");
         super.onResume();
-        Preferences.getPrefs(this).registerOnSharedPreferenceChangeListener(this);
         setupActionBar();
     }
 
@@ -500,7 +496,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         Log.d(TAG, "onPause()");
         super.onPause();
 
-        Preferences.getPrefs(this).unregisterOnSharedPreferenceChangeListener(this);
         Preferences.setLastFrequency(this, mCurFreq);
         Preferences.setLastChannel(this, getSelectedPreset());
     }
@@ -878,14 +873,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
             updateFrequency();
         }
         showSeekBar(false);
-    }
-
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        Log.d(TAG, "Shared preference " + key + " changed");
-        if (Preferences.KEY_HIDE_ACTIONBAR.equals(key)){
-            setupActionBar();
-        }
     }
 
     @Override
