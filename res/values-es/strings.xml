@@ -118,7 +118,5 @@
     <string name="hide_actionbar_summary">Oculta la barra de acción de Android en la ventana principal</string>
     <string name="hide_actionbar_title">Ocultar barra de acción</string>
     <string name="untitled">Sin Título</string>
-    <string name="use_loudspeaker_headset_summary">Utilizar altavoz como dispositivo de audio predeterminado para la Radio FM</string>
-    <string name="use_loudspeaker_headset_title">Usar altavoz</string>
 
 </resources>
