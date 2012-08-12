@@ -979,7 +979,7 @@ public class FMRadioPlayerService extends Service {
         intent.putExtra(EXTRA_COMMAND, command);
 
         return PendingIntent.getService(getApplicationContext(),
-                0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+                command.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     private void updateFmStateBroadcast(boolean active) {
