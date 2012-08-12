@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+            android:id="@+id/menu_save"
+            android:icon="@drawable/ic_menu_save_channel"
+            android:title="@string/save_preset" />
+    <item
+            android:id="@+id/menu_edit"
+            android:icon="@drawable/ic_menu_edit_preset"
+            android:title="@string/edit_preset" />
+    <item
+            android:id="@+id/menu_clear"
+            android:icon="@drawable/ic_menu_clear_channel"
+            android:title="@string/clear_presets" />
+    <item
+            android:id="@+id/menu_speaker"
+            android:icon="@drawable/ic_menu_speaker"
+            android:title="@string/by_loudspeaker"
+            android:checkable="true"
+            android:showAsAction="always" />
+    <item
+            android:id="@+id/menu_scan"
+            android:icon="@drawable/ic_menu_save_channel"
+            android:title="@string/scan" />
+    <item
+            android:id="@+id/menu_preferences"
+            android:icon="@android:drawable/ic_menu_preferences"
+            android:title="@string/settings_title" />
+    <item
+            android:id="@+id/menu_exit"
+            android:icon="@drawable/ic_menu_exit"
+            android:title="@string/exit" />
+</menu>

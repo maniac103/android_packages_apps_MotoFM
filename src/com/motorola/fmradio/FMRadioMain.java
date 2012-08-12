@@ -32,6 +32,7 @@ import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -76,15 +77,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     public static final int EDIT_MENU_ID = 2;
     public static final int REPLACE_MENU_ID = 3;
     public static final int CLEAR_MENU_ID = 4;
-
-    public static final int SAVE_ID = 1;
-    public static final int EDIT_ID = 2;
-    public static final int CLEAR_ID = 3;
-    public static final int PREFS_ID = 4;
-    public static final int EXIT_ID = 5;
-    public static final int SCAN_SAVE_ID = 6;
-    public static final int BY_LOUDSPEAKER_ID = 7;
-    public static final int BY_HEADSET_ID = 8;
 
     private static final int CLEAR_CODE = 0;
 
@@ -314,6 +306,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                         }
                     }
                     mRadioPowered = msg.arg1 != 0;
+                    invalidateOptionsMenu();
                     break;
                 case MSG_TUNE_FINISHED:
                     mCurFreq = msg.arg1;
@@ -599,42 +592,39 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        if (mService == null) {
-            return false;
-        }
         super.onPrepareOptionsMenu(menu);
 
         boolean canEditPreset = getSelectedPreset() >= 0;
+        boolean usesSpeaker = false;
+        boolean canUseHeadset = false;
 
-        menu.clear();
-        menu.add(Menu.NONE, CLEAR_ID, Menu.FIRST + 1, R.string.clear_presets).setIcon(R.drawable.ic_menu_clear_channel);
-        menu.add(Menu.NONE, PREFS_ID, Menu.FIRST + 4, R.string.settings_title).setIcon(android.R.drawable.ic_menu_preferences);
-        menu.add(Menu.NONE, EXIT_ID, Menu.FIRST + 5, R.string.exit).setIcon(R.drawable.ic_menu_exit);
-        if (canEditPreset && mRadioPowered) {
-            menu.add(Menu.NONE, EDIT_ID, Menu.FIRST, R.string.edit_preset).setIcon(R.drawable.ic_menu_edit_preset);
-        } else if (!canEditPreset) {
-            menu.add(Menu.NONE, SAVE_ID, Menu.FIRST, R.string.save_preset).setIcon(R.drawable.ic_menu_save_channel);
-        }
-        if (mRadioPowered) {
-            menu.add(Menu.NONE, SCAN_SAVE_ID, Menu.FIRST + 3, R.string.scan).setIcon(R.drawable.ic_menu_save_channel);
-        }
-
-        int audioRouting = 0;
-        try {
-            audioRouting = mService.getAudioRouting();
-        } catch (RemoteException e) {
-            Log.e(TAG, "Getting audio routing failed", e);
-        }
-        if (audioRouting == FMRadioPlayerService.FM_ROUTING_HEADSET) {
-            menu.add(Menu.NONE, BY_LOUDSPEAKER_ID, Menu.FIRST + 2, R.string.by_loudspeaker).setIcon(R.drawable.ic_menu_loud_speaker);
-        } else {
-            MenuItem headsetItem = menu.add(Menu.NONE, BY_HEADSET_ID, Menu.FIRST + 2, R.string.by_headset);
-            headsetItem.setIcon(R.drawable.ic_menu_header);
-            if (audioRouting == FMRadioPlayerService.FM_ROUTING_SPEAKER_ONLY) {
-                headsetItem.setEnabled(false);
+        if (mService != null) {
+            try {
+                int audioRouting = mService.getAudioRouting();
+                usesSpeaker = audioRouting != FMRadioPlayerService.FM_ROUTING_HEADSET;
+                canUseHeadset = audioRouting != FMRadioPlayerService.FM_ROUTING_SPEAKER_ONLY;
+            } catch (RemoteException e) {
+                Log.e(TAG, "Getting audio routing failed", e);
             }
         }
+
+        MenuItem speakerItem = menu.findItem(R.id.menu_speaker);
+        speakerItem.setEnabled(canUseHeadset);
+        speakerItem.setChecked(usesSpeaker);
+        speakerItem.setIcon(usesSpeaker ? R.drawable.ic_menu_headset : R.drawable.ic_menu_speaker);
+
+        menu.findItem(R.id.menu_edit).setVisible(canEditPreset && mRadioPowered);
+        menu.findItem(R.id.menu_save).setVisible(!canEditPreset && mRadioPowered);
+        menu.findItem(R.id.menu_scan).setVisible(mRadioPowered);
+
         return true;
     }
 
@@ -644,17 +634,17 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
             return false;
         }
         switch (item.getItemId()) {
-            case SAVE_ID:
+            case R.id.menu_save:
                 saveChannel(getIndexOfEmptyItem());
                 break;
-            case EDIT_ID:
+            case R.id.menu_edit:
                 editChannel(getSelectedPreset());
                 break;
-            case CLEAR_ID:
+            case R.id.menu_clear:
                 Intent clearIntent = new Intent(this, FMClearChannel.class);
                 startActivityForResult(clearIntent, CLEAR_CODE);
                 break;
-            case EXIT_ID:
+            case R.id.menu_exit:
                 if (mService != null) {
                     try {
                         mService.powerOff();
@@ -663,29 +653,30 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                     }
                 }
                 mRadioPowered = false;
+                invalidateOptionsMenu();
                 finish();
                 break;
-            case PREFS_ID:
+            case R.id.menu_preferences:
                 startActivity(new Intent(this, SettingsActivity.class));
                 break;
-            case SCAN_SAVE_ID:
+            case R.id.menu_scan:
                 if (isDBEmpty()) {
                     startScanning();
                 } else {
                     showDialog(DIALOG_IF_SCAN_NEXT);
                 }
                 break;
-            case BY_LOUDSPEAKER_ID:
-            case BY_HEADSET_ID:
-                int routing = item.getItemId() == BY_LOUDSPEAKER_ID
-                        ? FMRadioPlayerService.FM_ROUTING_SPEAKER
-                        : FMRadioPlayerService.FM_ROUTING_HEADSET;
-                Preferences.setUseSpeaker(this, item.getItemId() == BY_LOUDSPEAKER_ID);
+            case R.id.menu_speaker:
+                int routing = item.isChecked()
+                        ? FMRadioPlayerService.FM_ROUTING_HEADSET
+                        : FMRadioPlayerService.FM_ROUTING_SPEAKER;
+                Preferences.setUseSpeaker(this, routing == FMRadioPlayerService.FM_ROUTING_SPEAKER);
                 try {
                     mService.setAudioRouting(routing);
                 } catch (RemoteException e) {
                     Log.e(TAG, "Setting audio routing failed", e);
                 }
+                invalidateOptionsMenu();
                 break;
         }
 
@@ -1312,6 +1303,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         } else {
             mChannelList.setItemChecked(preset, true);
         }
+        invalidateOptionsMenu();
     }
 
     private int getSelectedPreset() {
