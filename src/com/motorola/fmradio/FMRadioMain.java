@@ -469,7 +469,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         mCurFreq = Preferences.getLastFrequency(this);
 
         initUI();
-        mIsBound = bindToService();
 
         PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
         mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, getClass().getName());
@@ -482,9 +481,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     protected void onDestroy() {
         Log.d(TAG, "onDestroy()");
         super.onDestroy();
-
-        unbindService();
-        mService = null;
         mWakeLock.release();
     }
 
@@ -493,6 +489,23 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         Log.d(TAG, "onResume()");
         super.onResume();
         setupActionBar();
+    }
+
+    @Override
+    protected void onStart() {
+        Log.d(TAG, "onStart()");
+        super.onStart();
+        mIsBound = bindToService();
+        if (!mIsBound) {
+            finish();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        Log.d(TAG, "onStop()");
+        unbindService();
+        super.onStop();
     }
 
     @Override
