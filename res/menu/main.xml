@@ -27,7 +27,8 @@
             android:icon="@android:drawable/ic_menu_preferences"
             android:title="@string/settings_title" />
     <item
-            android:id="@+id/menu_exit"
+            android:id="@+id/menu_power"
             android:icon="@drawable/ic_menu_exit"
-            android:title="@string/exit" />
+            android:title="@string/exit"
+            android:showAsAction="always" />
 </menu>

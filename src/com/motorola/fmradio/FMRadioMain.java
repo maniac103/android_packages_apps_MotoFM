@@ -81,16 +81,17 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     private static final int CLEAR_CODE = 0;
 
     private static final int MSG_POWERON_COMPLETE = 1;
-    private static final int MSG_TUNE_FINISHED = 2;
-    private static final int MSG_SEEK_FINISHED = 3;
-    private static final int MSG_SCAN_FINISHED = 4;
-    private static final int MSG_STATION_SCANNED = 5;
-    private static final int MSG_SEEK_SCAN_ABORTED = 6;
-    private static final int MSG_ERROR = 7;
-    private static final int MSG_AUDIO_MODE_CHANGED = 8;
-    private static final int MSG_CONTINUE_SEEK = 9;
-    private static final int MSG_CONTINUE_TUNE = 10;
-    private static final int MSG_STOP_SCAN_ANIMATION = 11;
+    private static final int MSG_POWEROFF_COMPLETE = 2;
+    private static final int MSG_TUNE_FINISHED = 3;
+    private static final int MSG_SEEK_FINISHED = 4;
+    private static final int MSG_SCAN_FINISHED = 5;
+    private static final int MSG_STATION_SCANNED = 6;
+    private static final int MSG_SEEK_SCAN_ABORTED = 7;
+    private static final int MSG_ERROR = 8;
+    private static final int MSG_AUDIO_MODE_CHANGED = 9;
+    private static final int MSG_CONTINUE_SEEK = 10;
+    private static final int MSG_CONTINUE_TUNE = 11;
+    private static final int MSG_STOP_SCAN_ANIMATION = 12;
 
     private int RANGE = 21000;
     private int RANGE_START = 87000;
@@ -108,12 +109,12 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         R.drawable.fm_number_6, R.drawable.fm_number_7, R.drawable.fm_number_8,
         R.drawable.fm_number_9
     };
-    private static final int[] NUMBER_IMAGES_UNSELECTED = new int[] {
-        R.drawable.fm_number_unselect_0, R.drawable.fm_number_unselect_1,
-        R.drawable.fm_number_unselect_2, R.drawable.fm_number_unselect_3,
-        R.drawable.fm_number_unselect_4, R.drawable.fm_number_unselect_5,
-        R.drawable.fm_number_unselect_6, R.drawable.fm_number_unselect_7,
-        R.drawable.fm_number_unselect_8, R.drawable.fm_number_unselect_9
+    private static final int[] NUMBER_IMAGES_DISABLED = new int[] {
+        R.drawable.fm_number_disabled_0, R.drawable.fm_number_disabled_1,
+        R.drawable.fm_number_disabled_2, R.drawable.fm_number_disabled_3,
+        R.drawable.fm_number_disabled_4, R.drawable.fm_number_disabled_5,
+        R.drawable.fm_number_disabled_6, R.drawable.fm_number_disabled_7,
+        R.drawable.fm_number_disabled_8, R.drawable.fm_number_disabled_9
     };
     private static final int[] NUMBER_IMAGES_PRESET = new int[] {
         R.drawable.fm_playing_list_0, R.drawable.fm_playing_list_1,
@@ -211,7 +212,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                 mName.setText(FMUtil.getPresetListString(context, cursor));
                 mQuickContext.setOnClickListener(this);
 
-                if (selected && Integer.valueOf(frequency) != 0) {
+                if (selected) {
                     mPeakOne.setVisibility(View.VISIBLE);
                     mPeakTwo.setVisibility(View.VISIBLE);
                     mPeakOne.setImageResource(R.anim.peak_meter_1);
@@ -270,16 +271,13 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                 return;
             }
 
-            boolean success = false;
             try {
-                success = mService.powerOn();
+                mRadioPowered = mService.isPowered();
             } catch (RemoteException e) {
-                Log.e(TAG, "Could not check FM power status", e);
+                Log.e(TAG, "Could not get power state", e);
             }
-            if (success) {
-                Log.v(TAG, "Waiting for FM service to come up");
-                showDialog(DIALOG_POWERON);
-            }
+            updateDisplayPanel();
+            invalidateOptionsMenu();
         }
 
         @Override
@@ -306,14 +304,25 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                         }
                     }
                     mRadioPowered = msg.arg1 != 0;
+                    Log.d(TAG, "MSG_POWERON_COMPLETE, arg " + msg.arg1 + " powered " + mRadioPowered);
                     invalidateOptionsMenu();
+                    updatePresetSwitcher();
+                    updateDisplayPanel();
+                    break;
+                case MSG_POWEROFF_COMPLETE:
+                    mRadioPowered = false;
+                    invalidateOptionsMenu();
+                    updatePresetSwitcher();
+                    updateDisplayPanel();
+                    enableUI(false);
                     break;
                 case MSG_TUNE_FINISHED:
                     mCurFreq = msg.arg1;
                     Log.d(TAG, "FM tune succeeded");
                     displayRdsScrollText(false);
                     enableUI(true);
-                    updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+                    updatePresetSwitcher();
+                    updateDisplayPanel();
                     break;
                 case MSG_STATION_SCANNED:
                     handleScannedStation(msg.arg1);
@@ -356,7 +365,8 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                             mCurFreq = FMUtil.MAX_FREQUENCY;
                         }
                     }
-                    updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+                    updatePresetSwitcher();
+                    updateDisplayPanel();
                     mHandler.sendMessageDelayed(Message.obtain(msg), LONG_PRESS_TUNE_TIMEOUT);
                     break;
                 case MSG_CONTINUE_SEEK:
@@ -381,7 +391,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
 
         @Override
         public void onDisabled() {
-            finish();
+            mHandler.sendEmptyMessage(MSG_POWEROFF_COMPLETE);
         }
 
         @Override
@@ -464,7 +474,8 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
         mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, getClass().getName());
         mWakeLock.setReferenceCounted(false);
-        updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+        updatePresetSwitcher();
+        updateDisplayPanel();
     }
 
     @Override
@@ -491,7 +502,8 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
 
         setContentView(R.layout.main);
         initUI();
-        updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+        updatePresetSwitcher();
+        updateDisplayPanel();
         enableUI(true);
     }
 
@@ -644,18 +656,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                 Intent clearIntent = new Intent(this, FMClearChannel.class);
                 startActivityForResult(clearIntent, CLEAR_CODE);
                 break;
-            case R.id.menu_exit:
-                if (mService != null) {
-                    try {
-                        mService.powerOff();
-                    } catch (RemoteException e) {
-                        Log.e(TAG, "Could not power down FM radio", e);
-                    }
-                }
-                mRadioPowered = false;
-                invalidateOptionsMenu();
-                finish();
-                break;
             case R.id.menu_preferences:
                 startActivity(new Intent(this, SettingsActivity.class));
                 break;
@@ -678,6 +678,13 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                 }
                 invalidateOptionsMenu();
                 break;
+            case R.id.menu_power:
+                if (!mRadioPowered) {
+                    doPowerOn();
+                } else {
+                    doPowerOff();
+                }
+                break;
         }
 
         return super.onOptionsItemSelected(item);
@@ -698,11 +705,13 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
             case REPLACE_MENU_ID:
                 boolean hasRds = !TextUtils.isEmpty(mRdsStationName);
                 saveStationToDB(pos, mCurFreq, hasRds ? null : "", hasRds ? mRdsStationName : "");
-                updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+                updatePresetSwitcher();
+                updateDisplayPanel();
                 break;
             case CLEAR_MENU_ID:
                 saveStationToDB(pos, 0, "", "");
-                updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+                updatePresetSwitcher();
+                updateDisplayPanel();
                 break;
         }
 
@@ -758,7 +767,8 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                     }
                 }
                 updateFrequency();
-                updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+                updatePresetSwitcher();
+                updateDisplayPanel();
                 break;
         }
     }
@@ -807,7 +817,8 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                     }
 
                     mCurFreq = mPreFreq;
-                    updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+                    updatePresetSwitcher();
+                    updateDisplayPanel();
                     enableUI(false);
                     updateFrequency();
                 }
@@ -843,8 +854,8 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                 setProgress(RANGE);
                 mCurFreq = FMUtil.MAX_FREQUENCY;
             }
-            updateFrequencyDisplay(mCurFreq, false);
-            updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+            updatePresetSwitcher();
+            updateDisplayPanel();
         }
     }
 
@@ -1029,7 +1040,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
      */
     private void initiateSeek(View v, boolean upward) {
         mPreFreq = mCurFreq;
-        // disableUIExceptButton(v);
+        disableUIExceptButton(v);
         displayRdsScrollText(false);
         showSeekBar(false);
         showSeekAnimation(true, upward);
@@ -1079,7 +1090,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     }
 
     private void initiateTune(View v, boolean upward) {
-        // disableUIExceptButton(v);
+        disableUIExceptButton(v);
         displayRdsScrollText(false);
         Message msg = Message.obtain(mHandler,
                 MSG_CONTINUE_TUNE, upward ? 1 : 0, 0, null);
@@ -1106,23 +1117,21 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         for (ImageButton button : mSeekButtons) {
             button.setEnabled(enabled);
         }
-        // updateButtonDrawables();
+        updateButtonDrawables();
         if (mChannelList != null) {
             mChannelList.setEnabled(enabled);
         }
     }
 
-    @SuppressWarnings("unused")
     private void disableUIExceptButton(View v) {
         long id = v.getId();
         for (ImageButton button : mSeekButtons) {
             button.setEnabled(button.getId() == id);
         }
-        // updateButtonDrawables();
+        updateButtonDrawables();
         mChannelList.setEnabled(false);
     }
 
-    @SuppressWarnings("unused")
     private void updateButtonDrawables() {
         for (ImageButton button : mSeekButtons) {
             boolean enabled = button.isEnabled();
@@ -1161,8 +1170,8 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                 saveChannel(position);
             } else {
                 mCurFreq = frequency;
-                updateDisplayPanel(mCurFreq, true);
-                updatePresetSwitcher(position + 1);
+                updatePresetSwitcher();
+                updateDisplayPanel();
                 updateFrequency();
             }
         }
@@ -1215,20 +1224,17 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private void updateDisplayPanel(int currentFreq, boolean isEditEnable) {
-        float progress = currentFreq - RANGE_START;
-        mSeekBar.setProgress((int) progress);
-
-        updateFrequencyDisplay(currentFreq, isEditEnable);
+    private void updateDisplayPanel() {
+        mSeekBar.setProgress(mCurFreq - RANGE_START);
+        updateFrequencyDisplay();
     }
 
-    private void updateFrequencyDisplay(int currentFreq, boolean isEditEnable) {
-        if (currentFreq < FMUtil.MIN_FREQUENCY || currentFreq > FMUtil.MAX_FREQUENCY) {
+    private void updateFrequencyDisplay() {
+        if (mCurFreq < FMUtil.MIN_FREQUENCY || mCurFreq > FMUtil.MAX_FREQUENCY) {
             return;
         }
 
-        int digit1, digit2, digit3, digit4, freq = currentFreq;
+        int digit1, digit2, digit3, digit4, freq = mCurFreq;
 
         digit1 = freq / 100000;
         freq -= digit1 * 100000;
@@ -1238,11 +1244,11 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         freq -= digit3 * 1000;
         digit4 = freq / 100;
 
-        Log.v(TAG, "FMRadio updateDisplay: currentFreq " + currentFreq + " -> digits " +
+        Log.v(TAG, "FMRadio updateDisplay: currentFreq " + mCurFreq + " -> digits " +
                 digit1 + " " + digit2 + " " + digit3 + " " + digit4);
 
-        int[] numbers = isEditEnable ? NUMBER_IMAGES : NUMBER_IMAGES_UNSELECTED;
-        int dot = isEditEnable ? R.drawable.fm_number_point : R.drawable.fm_number_unselect_point;
+        int[] numbers = mRadioPowered ? NUMBER_IMAGES : NUMBER_IMAGES_DISABLED;
+        int dot = mRadioPowered ? R.drawable.fm_number_point : R.drawable.fm_number_disabled_point;
 
         mFreqDigits[0].setImageResource(numbers[digit1]);
         mFreqDigits[0].setVisibility(digit1 == 0 ? View.GONE : View.VISIBLE);
@@ -1273,7 +1279,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     private boolean updatePresetSwitcher() {
         int index = -1;
 
-        if (mCurFreq > 0) {
+        if (mRadioPowered && mCurFreq > 0) {
             Cursor cursor = getContentResolver().query(Channels.CONTENT_URI, FMUtil.PROJECTION,
                     Channels.FREQUENCY + "=?", new String[] { String.valueOf(mCurFreq) }, null);
 
@@ -1303,6 +1309,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         } else {
             mChannelList.setItemChecked(preset, true);
         }
+        mChannelList.invalidateViews();
         invalidateOptionsMenu();
     }
 
@@ -1404,8 +1411,8 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                 while (!cursor.isAfterLast()) {
                     int id = cursor.getInt(FMUtil.CHANNEL_COLUMN_ID);
                     saveStationToDB(id, mCurFreq, null, mRdsStationName);
-                    updateDisplayPanel(mCurFreq, true);
                     updatePresetSwitcher(id + 1);
+                    updateDisplayPanel();
                     cursor.moveToNext();
                 }
                 cursor.close();
@@ -1476,7 +1483,8 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
             cancelScan();
         }
 
-        updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+        updatePresetSwitcher();
+        updateDisplayPanel();
         displayRdsScrollText(false);
     }
 
@@ -1496,7 +1504,8 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
 
     private void handleSeekFinished(boolean aborted) {
         mPreFreq = mCurFreq;
-        updateDisplayPanel(mCurFreq, updatePresetSwitcher());
+        updatePresetSwitcher();
+        updateDisplayPanel();
         displayRdsScrollText(false);
         enableUI(true);
         mHandler.sendEmptyMessageDelayed(MSG_STOP_SCAN_ANIMATION, SCAN_STOP_DELAY);
@@ -1509,5 +1518,31 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                 mHandler.sendMessageDelayed(msg, LONG_PRESS_SEEK_TIMEOUT);
             }
         }
+    }
+
+    private void doPowerOn() {
+        boolean success = false;
+        try {
+            success = mService.powerOn();
+        } catch (RemoteException e) {
+            Log.e(TAG, "Could not check FM power status", e);
+        }
+        if (success) {
+            Log.v(TAG, "Waiting for FM service to come up");
+            showDialog(DIALOG_POWERON);
+        }
+    }
+
+    private void doPowerOff() {
+        if (mService != null) {
+            try {
+                mService.powerOff();
+            } catch (RemoteException e) {
+                Log.e(TAG, "Could not power down FM radio", e);
+            }
+        }
+        mRadioPowered = false;
+        invalidateOptionsMenu();
+        enableUI(false);
     }
 }

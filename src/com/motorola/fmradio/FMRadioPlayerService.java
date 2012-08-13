@@ -352,6 +352,11 @@ public class FMRadioPlayerService extends Service {
         }
 
         @Override
+        public boolean isPowered() {
+            return !mState.isIdle();
+        }
+
+        @Override
         public boolean seek(int freq, boolean upward) {
             Log.d(TAG, "Got seek request, frequency " + freq + " upward " + upward);
             if (mState.isActive()) {
@@ -640,6 +645,7 @@ public class FMRadioPlayerService extends Service {
 
         if (intent != null && TextUtils.equals(intent.getAction(), ACTION_FM_COMMAND) && mState.isActive()) {
             String command = intent.getStringExtra(EXTRA_COMMAND);
+            Log.d(TAG, "Got service command " + command);
             if (COMMAND_TOGGLE_MUTE.equals(command)) {
                 setFMMuteState(!mMuted);
                 updateStateIndicators();
@@ -691,6 +697,7 @@ public class FMRadioPlayerService extends Service {
     }
 
     private void shutdownFM() {
+        Log.d(TAG, "Shutting down FM radio");
         if (mBound) {
             unbindService(mConnection);
             mBound = false;
@@ -1070,9 +1077,7 @@ public class FMRadioPlayerService extends Service {
     private void handlePowerOff() {
         Log.v(TAG, "FM radio hardware powered down");
         transitionToState(State.POWERDOWN);
-        if (!mInUse) {
-            shutdownFM();
-        }
+        shutdownFM();
     }
 
     private void updateCurrentFrequency(int frequency) {
