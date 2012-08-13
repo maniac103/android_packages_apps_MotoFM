@@ -314,6 +314,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                     invalidateOptionsMenu();
                     updatePresetSwitcher();
                     updateDisplayPanel();
+                    displayRdsScrollText(false);
                     enableUI(false);
                     break;
                 case MSG_TUNE_FINISHED:
