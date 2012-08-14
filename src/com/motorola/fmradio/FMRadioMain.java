@@ -160,7 +160,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     private AnimationDrawable mScanAnimationUp;
     private AnimationDrawable mScanAnimationDown;
     private ImageView mStereoStatus;
-    private RelativeLayout mPanelLayout;
 
     private ListView mChannelList;
     private ChannelListAdapter mAdapter;
@@ -483,13 +482,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         Log.d(TAG, "onDestroy()");
         super.onDestroy();
         mWakeLock.release();
-    }
-
-    @Override
-    protected void onResume() {
-        Log.d(TAG, "onResume()");
-        super.onResume();
-        setupActionBar();
     }
 
     @Override
@@ -904,8 +896,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
 
     private void initUI() {
         initImageSwitcher();
-        initPanelLayout();
-        setupActionBar();
         initSeekBar();
         initButtons();
         initListView();
@@ -922,29 +912,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
             button.setOnClickListener(this);
             button.setOnLongClickListener(this);
             button.setOnTouchListener(this);
-        }
-    }
-
-    private void initPanelLayout() {
-        mPanelLayout = (RelativeLayout) this.findViewById(R.id.fm_panel_layout);
-    }
-
-    /**
-     * Hide Action bar if user prefers so.
-     */
-    private void setupActionBar() {
-        if (Preferences.isActionBarHidden(this)) {
-            mPanelLayout.setBackgroundDrawable(getResources()
-                    .getDrawable(R.drawable.fm_background_noactionbar));
-            if (mActionBar.isShowing()) {
-                mActionBar.hide();
-            }
-        } else {
-            mPanelLayout.setBackgroundDrawable(getResources()
-                    .getDrawable(R.drawable.fm_background));
-            if (!mActionBar.isShowing()) {
-                mActionBar.show();
-            }
         }
     }
 

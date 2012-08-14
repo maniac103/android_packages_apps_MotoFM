@@ -65,10 +65,6 @@ public class Preferences {
         return !TextUtils.equals(value, "seek");
     }
 
-    static public boolean isActionBarHidden(Context context) {
-        return getPrefs(context).getBoolean(KEY_HIDE_ACTIONBAR, false);
-    }
-
     static public boolean useSpeakerAsOutput(Context context) {
         return getPrefs(context).getBoolean(KEY_USE_LOUDSPEAKER, false);
     }

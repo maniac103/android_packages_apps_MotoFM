@@ -127,9 +127,6 @@
     <string name="airplane_ignore_warning_message">The FM Radio uses the Bluetooth hardware internally, which may be illegal to use under some conditions, e.g. on a plane.\nDo you really want to enable FM Radio operation in airplane mode?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
-    <string name="interface_settings_title">Interface</string>
-    <string name="hide_actionbar_summary">Hides the Android Action Bar in main window</string>
-    <string name="hide_actionbar_title">Hide Action Bar</string>
     <string name="untitled">Untitled</string>
     <string name="backup_restore_title">Backup &amp; Restore</string>
     <string name="backup_presets_title">Backup presets</string>
