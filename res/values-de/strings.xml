@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">FM-Radio</string>
-    <string name="exit">Beenden</string>
     <string name="select_ch">Voreinstellung auswählen</string>
     <string name="frequency">Frequenz</string>
     <string name="ch_name">Name</string>
@@ -14,8 +13,10 @@
     <string name="fmradio_save_canceled">Die Suche wurde abgebrochen.</string>
     <string name="scan_result">{0,choice,0#Es wurden keine Sender|1#1 Sender wurde|1&lt;{0} Sender wurden} gefunden.</string>
     <string name="scan_progress">{0,choice,0#Noch keine|0&lt;{0}} Sender gefunden\u2026</string>
-    <string name="by_loudspeaker">Lautsprecher</string>
-    <string name="by_headset">Headset</string>
+    <string name="menu_speaker">Lautsprecher aktivieren</string>
+    <string name="menu_headset">Lautsprecher deaktivieren</string>
+    <string name="menu_power_on">FM-Radio aktivieren</string>
+    <string name="menu_power_off">FM-Radio deaktivieren</string>
     <string name="btn_done">Fertig</string>
     <string name="preset">Voreinstellung</string>
     <string name="edit_preset_title">Voreinstellung %1$d bearbeiten</string>
