@@ -285,7 +285,7 @@ public class FMRadioPlayerService extends Service {
 
         @Override
         public int getAudioRouting() {
-            if (!isHeadsetConnected() && mAudioRouting == FM_ROUTING_SPEAKER) {
+            if (mState.isActive() && !isHeadsetConnected() && mAudioRouting == FM_ROUTING_SPEAKER) {
                 return FM_ROUTING_SPEAKER_ONLY;
             }
             return mAudioRouting;
@@ -414,6 +414,8 @@ public class FMRadioPlayerService extends Service {
     private final Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
+            final Context context = FMRadioPlayerService.this;
+
             switch (msg.what) {
                 case MSG_SEEK_CHANNEL:
                     try {
@@ -424,7 +426,7 @@ public class FMRadioPlayerService extends Service {
                     }
                     break;
                 case MSG_SHOW_NOTICE:
-                    FMUtil.showNoticeDialog(FMRadioPlayerService.this, msg.arg1);
+                    FMUtil.showNoticeDialog(context, msg.arg1);
                     break;
                 case MSG_TUNE_COMPLETE:
                     handleTuneComplete(msg.arg1 != 0, msg.arg2);
@@ -511,12 +513,13 @@ public class FMRadioPlayerService extends Service {
                     audioPrepare(mAudioRouting == FM_ROUTING_HEADSET
                             ? FM_ROUTING_SPEAKER : FM_ROUTING_HEADSET);
                     audioPrepare(mAudioRouting);
-                    setFMVolume(Preferences.getVolume(FMRadioPlayerService.this));
+                    setFMVolume(Preferences.getVolume(context));
                     updateStateIndicators();
                     break;
                 case MSG_SET_ROUTING:
                     if (msg.arg1 == FM_ROUTING_HEADSET || msg.arg1 == FM_ROUTING_SPEAKER) {
                         mAudioRouting = msg.arg1;
+                        Preferences.setUseSpeaker(context, msg.arg1 == FM_ROUTING_SPEAKER);
                         if (mState.isActive()) {
                             audioPrepare(mAudioRouting);
                         }

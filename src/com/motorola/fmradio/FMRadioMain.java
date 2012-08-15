@@ -177,6 +177,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     private int mCurFreq = FMUtil.MIN_FREQUENCY;
     private int mPreFreq = FMUtil.MIN_FREQUENCY;
     private boolean mRadioPowered = false;
+    private boolean mSpeakerEnabled = false;
     private boolean mScanning = false;
     private int mScannedStations = -1;
     private int mLongPressedButton = 0;
@@ -272,6 +273,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
 
             try {
                 mRadioPowered = mService.isPowered();
+                mSpeakerEnabled = mService.getAudioRouting() != FMRadioPlayerService.FM_ROUTING_HEADSET;
             } catch (RemoteException e) {
                 Log.e(TAG, "Could not get power state", e);
             }
@@ -621,13 +623,12 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         super.onPrepareOptionsMenu(menu);
 
         boolean canEditPreset = getSelectedPreset() >= 0;
-        boolean usesSpeaker = false;
         boolean canUseHeadset = false;
 
         if (mService != null) {
             try {
                 int audioRouting = mService.getAudioRouting();
-                usesSpeaker = audioRouting != FMRadioPlayerService.FM_ROUTING_HEADSET;
+                mSpeakerEnabled = audioRouting != FMRadioPlayerService.FM_ROUTING_HEADSET;
                 canUseHeadset = audioRouting != FMRadioPlayerService.FM_ROUTING_SPEAKER_ONLY;
             } catch (RemoteException e) {
                 Log.e(TAG, "Getting audio routing failed", e);
@@ -640,9 +641,8 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
 
         MenuItem speakerItem = menu.findItem(R.id.menu_speaker);
         speakerItem.setEnabled(canUseHeadset);
-        speakerItem.setChecked(usesSpeaker);
-        speakerItem.setTitle(usesSpeaker ? R.string.menu_headset : R.string.menu_speaker);
-        speakerItem.setIcon(usesSpeaker ? R.drawable.ic_menu_speaker_on : R.drawable.ic_menu_speaker);
+        speakerItem.setTitle(mSpeakerEnabled ? R.string.menu_headset : R.string.menu_speaker);
+        speakerItem.setIcon(mSpeakerEnabled ? R.drawable.ic_menu_speaker_on : R.drawable.ic_menu_speaker);
 
         menu.findItem(R.id.menu_edit).setVisible(canEditPreset && mRadioPowered);
         menu.findItem(R.id.menu_save).setVisible(!canEditPreset && mRadioPowered);
@@ -678,10 +678,10 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
                 }
                 break;
             case R.id.menu_speaker:
-                int routing = item.isChecked()
+                int routing = mSpeakerEnabled
                         ? FMRadioPlayerService.FM_ROUTING_HEADSET
                         : FMRadioPlayerService.FM_ROUTING_SPEAKER;
-                Preferences.setUseSpeaker(this, routing == FMRadioPlayerService.FM_ROUTING_SPEAKER);
+                mSpeakerEnabled = !mSpeakerEnabled;
                 try {
                     mService.setAudioRouting(routing);
                 } catch (RemoteException e) {

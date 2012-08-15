@@ -9,7 +9,6 @@
             android:id="@+id/menu_speaker"
             android:icon="@drawable/ic_menu_speaker"
             android:title="@string/menu_speaker"
-            android:checkable="true"
             android:showAsAction="ifRoom" />
     <item
             android:id="@+id/menu_save"
