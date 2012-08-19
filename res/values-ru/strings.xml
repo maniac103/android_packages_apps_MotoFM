@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">FM-Радио</string>
-    <string name="exit">Выход</string>
     <string name="select_ch">Выбор предустановки</string>
     <string name="frequency">Частота</string>
     <string name="ch_name">Название</string>
@@ -15,8 +14,6 @@
     <!-- java.text.MessageFormat syntax. Android's plurals don't work for the zero case -->
     <string name="scan_result">{0,choice,0#Станций не было найдено|1#1 станция была найдена|1&lt;{0} станций найдено}.</string>
     <string name="scan_progress">{0,choice,0#Пока станций не найдено|1#Найдена 1 станция|1&lt;Найдено {0} станций}\u2026</string>
-    <string name="by_loudspeaker">Громкоговоритель</string>
-    <string name="by_headset">Наушники</string>
     <string name="btn_done">Выполненно</string>
     <string name="preset">Предустановка</string>
     <string name="edit_preset_title">Редактировать предустановку %1$d</string>

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Rádio FM</string>
-    <string name="exit">Sair</string>
     <string name="select_ch">Selecionar pré definida</string>
     <string name="frequency">Frequência</string>
     <string name="ch_name">Nome</string>
@@ -11,8 +10,6 @@
     <string name="save_preset">Salvar pré definida</string>
     <string name="clear_presets">Fechar pré definidas</string>
     <string name="scan">Procurar</string>
-    <string name="by_loudspeaker">Alto-falante</string>
-    <string name="by_headset">Fones de ouvido</string>
     <string name="play_preset">Reproduzir pré definida</string>
     <string name="edit_preset">Editar pré definida</string>
     <string name="replace_preset">Substituir pré definida</string>

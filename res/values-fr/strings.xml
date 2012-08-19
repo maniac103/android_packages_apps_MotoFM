@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Radio FM</string>
-    <string name="exit">Quitter</string>
     <string name="select_ch">Sélectionner Station préréglée</string>
     <string name="frequency">Fréquence</string>
     <string name="ch_name">Nom</string>
@@ -16,8 +15,6 @@
     <string name="scan_result">{0,choice,0#Aucune station|1#1 station|1&lt;{0} stations} enregistrée\(s\).</string>
     <string name="btn_done">Ok</string>
     <string name="edit_preset_title">Modifier station n°%1$d</string>
-    <string name="by_loudspeaker">Haut-parleur</string>
-    <string name="by_headset">Casque</string>
     <string name="play_preset">Lire station préréglée</string>
     <string name="edit_preset">Modifier station</string>
     <string name="replace_preset">Remplacer station préréglée</string>

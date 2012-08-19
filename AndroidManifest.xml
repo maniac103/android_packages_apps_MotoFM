@@ -2,10 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
         package="com.motorola.fmradio">
 
-    <uses-sdk
-            android:minSdkVersion="15"
-            android:targetSdkVersion="15" />
-
     <uses-permission android:name="com.motorola.android.permission.USEFMRADIO" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />

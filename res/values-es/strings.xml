@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Radio FM</string>
-    <string name="exit">Salir</string>
     <string name="select_ch">Seleccionar emisora presint.</string>
     <string name="frequency">Frecuencia</string>
     <string name="ch_name">Nombre</string>
@@ -10,8 +9,6 @@
     <string name="empty">Vacío</string>
     <string name="clear_presets">Borrar emisoras presint.</string>
     <string name="scan">Buscar</string>
-    <string name="by_loudspeaker">Altavoz</string>
-    <string name="by_headset">Auricular</string>
     <string name="play_preset">Escuchar emisora presint.</string>
     <string name="edit_preset">Editar emisora presint.</string>
     <string name="replace_preset">Sustituir emisora presint.</string>
@@ -114,9 +111,6 @@
     <string name="airplane_ignore_warning_message">La Radio FM utiliza el hardware interno de Bluetooth, podría ser ilegal su utilización bajo ciertas condiciones, Por Ej. en un avión.\nDesea realmente activar la Radio FM en el modo avión?</string>
     <string name="yes">Si</string>
     <string name="no">No</string>
-    <string name="interface_settings_title">Interfaz</string>
-    <string name="hide_actionbar_summary">Oculta la barra de acción de Android en la ventana principal</string>
-    <string name="hide_actionbar_title">Ocultar barra de acción</string>
     <string name="untitled">Sin Título</string>
 
 </resources>

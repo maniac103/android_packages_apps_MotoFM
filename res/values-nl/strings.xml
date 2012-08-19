@@ -2,7 +2,6 @@
 <resources>
 
     <string name="app_name">FM Radio</string>
-    <string name="exit">FM Sluiten</string>
     <string name="select_ch">Zender kiezen</string>
     <string name="frequency">Frequentie</string>
     <string name="ch_name">Naam</string>
@@ -15,8 +14,6 @@
     <string name="fmradio_save_canceled">Zoeken naar zenders is onderbroken.</string>
     <string name="scan_result">{0,choice,0#Geen zenders|1#1 Zender|1&lt;{0} Zenders} gevonden.</string>
     <string name="scan_progress">{0,choice,0#Nog geen zenders gevonden|1#1 Zender gevonden|1&lt;{0} Zenders gevonden}\u2026</string>
-    <string name="by_loudspeaker">Luidspreker</string>
-    <string name="by_headset">Headset</string>
     <string name="btn_done">Klaar</string>
     <string name="preset">Zender</string>
     <string name="edit_preset_title">Zender %1$d bewerken</string>
@@ -125,9 +122,6 @@
     <string name="airplane_ignore_warning_message">De FM Radio gebruikt de Bluetooth hardware inwendig. Onder bepaalde omstandigheden kan dit illegaal zijn in sommige landen. Onderandere op vliegtuigen. Weet u zeker dat u FM Radio wilt kunnen beluisteren in vliefmodus?</string>
     <string name="yes">Ja</string>
     <string name="no">Nee</string>
-    <string name="interface_settings_title">Interface</string>
-    <string name="hide_actionbar_summary">Verberg de Android Action Bar in het standaardscherm</string>
-    <string name="hide_actionbar_title">Verberg Action Bar</string>
     <string name="untitled">Geen titel</string>
 
 </resources>

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Radio FM</string>
-    <string name="exit">Esci</string>
     <string name="select_ch">Seleziona stazione</string>
     <string name="frequency">Frequenza</string>
     <string name="ch_name">Nome</string>
@@ -11,8 +10,6 @@
     <string name="save_preset">Salva stazione</string>
     <string name="clear_presets">Cancella stazioni</string>
     <string name="scan">Ricerca</string>
-    <string name="by_loudspeaker">Altoparlante</string>
-    <string name="by_headset">Cuffie</string>
     <string name="play_preset">Riproduci stazione</string>
     <string name="edit_preset">Modifica stazione</string>
     <string name="replace_preset">Sostituisci stazione</string>
