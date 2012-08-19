@@ -18,6 +18,7 @@ import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.drawable.AnimationDrawable;
+import android.graphics.Rect;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -35,6 +36,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.TouchDelegate;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
@@ -155,6 +157,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     private ImageSwitcher[] mPresetDigits;
     private LinearLayout mPresetLayout;
     private SeekBar mSeekBar;
+    private View mFrequencyPanel;
     private TextView mRdsMarqueeText;
     private ImageView mScanBar;
     private AnimationDrawable mScanAnimationUp;
@@ -848,7 +851,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
 
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {
-        showSeekBar(true);
+        mSeekBar.setVisibility(View.VISIBLE);
         mPreFreq = mCurFreq;
     }
 
@@ -875,7 +878,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         if (mCurFreq != mPreFreq) {
             updateFrequency();
         }
-        showSeekBar(false);
+        mSeekBar.setVisibility(View.GONE);
     }
 
     @Override
@@ -895,8 +898,8 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     }
 
     private void initUI() {
-        initImageSwitcher();
         initSeekBar();
+        initImageSwitcher();
         initButtons();
         initListView();
         enableUI(false);
@@ -916,6 +919,9 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     }
 
     private void initImageSwitcher() {
+        mFrequencyPanel = findViewById(R.id.fm_panel_layout);
+        mFrequencyPanel.setTouchDelegate(new TouchRedirector(mSeekBar));
+
         mFreqDigits = new ImageSwitcher[5];
         mFreqDigits[0] = (ImageSwitcher) findViewById(R.id.Img_switcher1);
         mFreqDigits[1] = (ImageSwitcher) findViewById(R.id.Img_switcher2);
@@ -982,12 +988,45 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         });
     }
 
+    private static class TouchRedirector extends TouchDelegate {
+        private View mDelegateView;
+        private boolean mDelegateTargeted = false;
+
+        public TouchRedirector(View delegateView) {
+            super(new Rect(), delegateView);
+            mDelegateView = delegateView;
+        }
+
+        @Override
+        public boolean onTouchEvent(MotionEvent event) {
+            boolean sendToDelegate = false;
+            boolean handled = false;
+
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    mDelegateTargeted = true;
+                    sendToDelegate = true;
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_MOVE:
+                    sendToDelegate = mDelegateTargeted;
+                    break;
+                case MotionEvent.ACTION_CANCEL:
+                    sendToDelegate = mDelegateTargeted;
+                    mDelegateTargeted = false;
+                    break;
+            }
+            if (sendToDelegate) {
+                handled = mDelegateView.dispatchTouchEvent(event);
+            }
+            return handled;
+        }
+    }
+
     private void initSeekBar() {
         mSeekBar = (SeekBar) findViewById(R.id.seek);
-        mSeekBar.setVisibility(View.VISIBLE);
         mSeekBar.setOnSeekBarChangeListener(this);
         mSeekBar.setEnabled(true);
-        showSeekBar(false);
 
         mScanBar = (ImageView) findViewById(R.id.scan_anim);
         mScanAnimationUp = (AnimationDrawable) getResources()
@@ -1028,23 +1067,9 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         mPreFreq = mCurFreq;
         disableUIExceptButton(v);
         displayRdsScrollText(false);
-        showSeekBar(false);
+        mSeekBar.setVisibility(View.GONE);
         showSeekAnimation(true, upward);
         startSeek(0, upward);
-    }
-
-    /**
-     * Show Seek Bar
-     *
-     * @param show show or not.
-     */
-    private void showSeekBar(boolean show) {
-        mSeekBar.setBackgroundDrawable(show ?
-                getResources().getDrawable(R.drawable.fm_background_pointer) :
-                getResources().getDrawable(R.drawable.fm_background_pointer_null));
-        mSeekBar.setThumb(show ?
-                getResources().getDrawable(R.drawable.fm_pointer) :
-                getResources().getDrawable(R.drawable.fm_pointer_null));
     }
 
     /**
