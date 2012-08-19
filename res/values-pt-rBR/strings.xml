@@ -1,20 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Rádio FM</string>
-    <string name="select_ch">Selecionar pré definida</string>
+    <string name="select_ch">Selecionar estação</string>
     <string name="frequency">Frequência</string>
     <string name="ch_name">Nome</string>
     <string name="mhz">MHz</string>
-    <string name="preset">Pré definida</string>
+    <string name="preset">Estação</string>
     <string name="empty">Vazia</string>
-    <string name="save_preset">Salvar pré definida</string>
-    <string name="clear_presets">Fechar pré definidas</string>
+    <string name="save_preset">Salvar estação</string>
+    <string name="clear_presets">Excluir estações</string>
     <string name="scan">Procurar</string>
-    <string name="play_preset">Reproduzir pré definida</string>
-    <string name="edit_preset">Editar pré definida</string>
-    <string name="replace_preset">Substituir pré definida</string>
-    <string name="clear_preset">Apagar pré definida</string>
-    <string name="clear">Apagar</string>
+    
+    <string name="fmradio_save_canceled">Busca por estações foi cancelada.</string>
+    <!-- java.text.MessageFormat syntax. Android's plurals don't work for the zero case -->
+    <string name="scan_result">{0,choice,0#Nenhuma estação encontrada|1#1 estação encontrada|1&lt;{0} estações encontradas}.</string>
+    <string name="scan_progress">{0,choice,0#Nenhuma estação encontrada|1#Encontrada 1 estação|1&lt;Encontradas {0} estações}\u2026</string>
+        
+    <string name="play_preset">Reproduzir estação</string>
+    <string name="edit_preset">Editar estação</string>
+    <string name="replace_preset">Substituir estação</string>
+    <string name="clear_preset">Excluir estação</string>
+    <string name="clear">Excluir</string>
     <string name="select_all">Marcar todas</string>
     <string name="unselect_all">Desmarcar todas</string>
     <string name="fmradio_scan_confirm_msg">Deseja procurar todas as estações disponíveis?</string>
@@ -36,7 +42,7 @@
     <string name="fm_pty_list_09">Variado</string>
     <string name="fm_pty_list_10">Música pop</string>
     <string name="fm_pty_list_11">Rock</string>
-    <string name="fm_pty_list_12">M.O.R. Músicas</string>
+    <string name="fm_pty_list_12">Coletãnea de Músicas</string>
     <string name="fm_pty_list_13">Clássico leve</string>
     <string name="fm_pty_list_14">Clássico sério</string>
     <string name="fm_pty_list_15">Outras músicas</string>
@@ -87,4 +93,43 @@
     <string name="fm_pty_list_61">Clima</string>
     <string name="fm_pty_list_62">Teste de emergência</string>
     <string name="fm_pty_list_63">Emergêrcia</string>
+        
+    <string name="settings_title">Configurações</string>
+    <string name="general_settings_title">General</string>
+    <string name="ignore_airplane_title">Ignorar modo avião</string>
+    <string name="ignore_airplane_summary">Permite operação do rádio FM mesmo com modo avião ativado</string>
+    <string name="ignore_no_headset_title">Ignorar fone de ouvido</string>
+    <string name="ignore_no_headset_summary">Permite usar o rádio FM sem fone de ouvido conectado. A qualidade da recepção será pejudicada</string>
+    <string name="tuning_settings_title">Sintonização</string>
+    <string name="seek_sensitivity_title">Sensibilidade da busca</string>
+    <string name="seek_sensitivity_summary">Define o nível do sinal para a sintonia das estações durante a busca</string>
+    <string name="seek_sensitivity_entry_verystrong">Muito forte</string>
+    <string name="seek_sensitivity_entry_strong">Forte</string>
+    <string name="seek_sensitivity_entry_medium">Médio</string>
+    <string name="seek_sensitivity_entry_weak">Fraco</string>
+    <string name="seek_sensitivity_entry_veryweak">Muito fraco</string>
+    <string name="button_settings_title">Comportameto dos botões</string>
+    <string name="media_button_title">Botões de Mídia</string>
+    <string name="media_button_summary">Selecione o comportamento dos botões de avanço/retrocesso</string>
+    <string name="media_button_entry_presets">Escolher entre estações salvas</string>
+    <string name="media_button_entry_seek">Procurar estações</string>
+    <string name="notice">Nota</string>
+    <string name="warning">Aviso</string>
+    <string name="no_headset_ignore_message">O fone de ouvido funciona como antena FM, a qualidade da recepção será prejudicada bastante com a retirada do fone.</string>
+    <string name="airplane_ignore_warning_message">O rádio FM usará o Bluetooth interno, tal utilização pode ser ilegal, por exemplo no avião.\nVocê deseja mesmo usar o rádio FM em modo avião?</string>
+    <string name="yes">Sim</string>
+    <string name="no">Não</string>
+    <string name="untitled">Não definido</string>
+    <string name="backup_restore_title">Backup &amp; Restauração</string>
+    <string name="backup_presets_title">Backup das estações</string>
+    <string name="backup_presets_summary">Criar backup da lista atual de estações no SD card</string>
+    <string name="backup_presets_dialog_message">Digite o nome do arquivo de backup.</string>
+    <string name="backup_presets_success_toast">Lista de estações salva com sucesso.</string>
+    <string name="backup_presets_failure_toast">Falha ao salvar a lista de estações.</string>
+    <string name="restore_presets_title">Restaurar estações</string>
+    <string name="restore_presets_summary">Recupera uma lista de estações que foi salva anteriormente</string>
+    <string name="restore_presets_success_toast">O backup da lista com %1$d estações foi restaurado.</string>
+    <string name="restore_presets_failure_toast">Falha na restauração d lista de estações.</string>
+    <string name="select_backup">Selecionar backup</string>
+    
 </resources>
