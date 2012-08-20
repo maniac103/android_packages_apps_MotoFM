@@ -1103,29 +1103,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         mRdsMarqueeText.setText(null);
     }
 
-    private void updateButtonDrawables() {
-        for (ImageButton button : mSeekButtons) {
-            boolean enabled = button.isEnabled();
-            int resId = 0;
-
-            switch (button.getId()) {
-                case R.id.btn_seekbackward:
-                    resId = enabled ? R.drawable.fm_autosearch_reduce_enable : R.drawable.fm_autosearch_reduce_disable;
-                    break;
-                case R.id.btn_reduce:
-                    resId = enabled ? R.drawable.fm_manualadjust_reduce_enable : R.drawable.fm_manualadjust_reduce_disable;
-                    break;
-                case R.id.btn_add:
-                    resId = enabled ? R.drawable.fm_manualadjust_plus_enable : R.drawable.fm_manualadjust_plus_disable;
-                    break;
-                case R.id.btn_seekforward:
-                    resId = enabled ? R.drawable.fm_autosearch_plus_enable : R.drawable.fm_autosearch_plus_disable;
-                    break;
-            }
-            button.setImageResource(resId);
-        }
-    }
-
     private void playClickPreset(int position) {
         Uri uri = Uri.withAppendedPath(Channels.CONTENT_URI, String.valueOf(position));
         Cursor cursor = getContentResolver().query(uri, FMUtil.PROJECTION, null, null, null);
@@ -1209,7 +1186,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         for (ImageButton button : mSeekButtons) {
             button.setEnabled(enabled || button.getId() == mLongPressedButton);
         }
-        updateButtonDrawables();
 
         mChannelList.setEnabled(enabled);
         mSeekBar.setEnabled(enabled);
