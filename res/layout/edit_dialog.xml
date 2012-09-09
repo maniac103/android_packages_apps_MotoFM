@@ -17,7 +17,7 @@
                 android:layout_marginTop="4dip">
 
             <TextView
-                    style="?android:attr/textAppearanceSmallInverse"
+                    style="?android:attr/textAppearanceSmall"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginRight="8dip"
@@ -25,7 +25,7 @@
 
             <TextView
                     android:id="@+id/channel_frequency"
-                    style="?android:attr/textAppearanceSmallInverse"
+                    style="?android:attr/textAppearanceSmall"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textStyle="bold" />
@@ -33,14 +33,14 @@
         </LinearLayout>
 
         <TextView
-                style="?android:attr/textAppearanceSmallInverse"
+                style="?android:attr/textAppearanceSmall"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dip"
                 android:text="@string/ch_name" />
 
         <CheckBox android:id="@+id/use_rds_name"
-                  style="?android:attr/textAppearanceSmallInverse"
+                  style="?android:attr/textAppearanceSmall"
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
                   android:text="@string/use_rds_name" />
