@@ -127,7 +127,7 @@ public class SettingsActivity extends PreferenceActivity implements OnPreference
     }
 
     @Override
-    protected Dialog onCreateDialog(int id) {
+    protected Dialog onCreateDialog(int id, Bundle args) {
         switch (id) {
             case DIALOG_WARN_AIRPLANE:
                 return new AlertDialog.Builder(this)

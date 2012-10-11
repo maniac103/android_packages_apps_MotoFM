@@ -522,7 +522,8 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                 dialog.setTitle(getString(R.string.fmradio_scanning_title));
                 dialog.setIndeterminate(false);
                 dialog.setCancelable(true);
-                dialog.setButton(getString(android.R.string.cancel), new DialogInterface.OnClickListener() {
+                dialog.setButton(DialogInterface.BUTTON_NEGATIVE,
+                        getString(android.R.string.cancel), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int whichButton) {
                         dialog.cancel();
