@@ -127,6 +127,7 @@
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="untitled">Untitled</string>
+    <string name="muted_notification">(Muted)</string>
     <string name="backup_restore_title">Backup &amp; Restore</string>
     <string name="backup_presets_title">Backup presets</string>
     <string name="backup_presets_summary">Backup the current list of presets to the SD card</string>

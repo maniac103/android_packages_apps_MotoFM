@@ -748,6 +748,7 @@ public class FMRadioPlayerService extends Service {
                         Log.d(TAG, "Received FM volume change intent, setting volume to " + volume);
                         Preferences.setVolume(FMRadioPlayerService.this, volume);
                         setFMVolume(volume);
+                        updateStateIndicators();
                     }
                 } else if (mState.isActive() && action.equals(SettingsActivity.ACTION_RSSI_UPDATED)) {
                     setSeekSensitivity(intent.getIntExtra(SettingsActivity.EXTRA_RSSI, -1));
@@ -896,15 +897,30 @@ public class FMRadioPlayerService extends Service {
             stationName = mRdsStationName;
         }
 
-        /* TODO: add hint if muted? */
-        mNotification.setLatestEventInfo(this, stationName != null ? stationName : frequencyString,
-                stationName != null ? frequencyString : "", mActivityIntent);
+        boolean muted = mMuted || mLostAudioFocus || Preferences.getVolume(this) == 0;
+        String titleLine, infoLine;
+
+        if (muted) {
+            titleLine = frequencyString;
+            infoLine = getString(R.string.muted_notification);
+        } else if (stationName != null) {
+            titleLine = stationName;
+            infoLine = frequencyString;
+        } else {
+            titleLine = frequencyString;
+            infoLine = "";
+        }
+
+        mNotification.icon = muted
+                ? R.drawable.fm_statusbar_icon_muted
+                : R.drawable.fm_statusbar_icon;
+        mNotification.setLatestEventInfo(this, titleLine, infoLine, mActivityIntent);
         startForeground(R.string.app_name, mNotification);
 
         updateFmStateBroadcast(true);
 
         /* fake a music state change to make the FM state appear on the lockscreen */
-        if (mState.isActive() && !mMuted) {
+        if (mState.isActive() && !muted) {
             StringBuilder sb = new StringBuilder();
             if (stationName != null) {
                 sb.append(stationName);
