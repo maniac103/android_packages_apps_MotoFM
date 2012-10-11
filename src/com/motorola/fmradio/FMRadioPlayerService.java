@@ -34,8 +34,6 @@ import com.motorola.fmradio.FMDataProvider.Channels;
 public class FMRadioPlayerService extends Service {
     private static final String TAG = "FMRadioPlayerService";
 
-    private static final String ACTION_AUDIOPATH_BUSY = "android.intent.action.AudioPathBusy";
-    private static final String ACTION_AUDIOPATH_FREE = "android.intent.action.AudioPathFree";
     private static final String ACTION_MUSIC_META_CHANGED = "com.android.music.metachanged";
     public static final String ACTION_FM_COMMAND = "com.motorola.fmradio.SERVICE_COMMAND";
 
@@ -744,12 +742,6 @@ public class FMRadioPlayerService extends Service {
                         FMUtil.showNoticeDialog(context, R.string.fmradio_airplane_mode_enabled);
                         mHandler.sendEmptyMessage(MSG_SHUTDOWN);
                     }
-                } else if (action.equals(ACTION_AUDIOPATH_FREE)) {
-                    Log.v(TAG, "Audio path is available again");
-                    setFMMuteState(false);
-                } else if (action.equals(ACTION_AUDIOPATH_BUSY)) {
-                    Log.d(TAG, "Audio path is busy");
-                    setFMMuteState(true);
                 } else if (action.equals(AudioManager.VOLUME_CHANGED_ACTION)) {
                     if (intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_TYPE, -1) == AudioManager.STREAM_FM) {
                         int volume = intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, 0);
@@ -767,8 +759,6 @@ public class FMRadioPlayerService extends Service {
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED);
         filter.addAction(AudioManager.VOLUME_CHANGED_ACTION);
-        filter.addAction(ACTION_AUDIOPATH_FREE);
-        filter.addAction(ACTION_AUDIOPATH_BUSY);
         filter.addAction(Intent.ACTION_HEADSET_PLUG);
         filter.addAction(SettingsActivity.ACTION_RSSI_UPDATED);
         registerReceiver(mReceiver, filter);
