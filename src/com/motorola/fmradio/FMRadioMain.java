@@ -255,6 +255,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
             boolean success = false;
             try {
                 success = mService.powerOn();
+                mCurFreq = mService.getCurrentFrequency();
             } catch (RemoteException e) {
                 Log.e(TAG, "Could not check FM power status", e);
             }
@@ -279,7 +280,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
             switch (msg.what) {
                 case MSG_POWERON_COMPLETE:
-                    if (msg.arg1 != 0) {
+                    if (msg.arg2 != 0) {
                         Log.d(TAG, "FM radio powered on successfully");
                         dismissDialog(DIALOG_POWERON);
                         enableUI(true);
@@ -287,7 +288,9 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
                             showDialog(DIALOG_IF_SCAN_FIRST);
                         }
                     }
-                    mRadioPowered = msg.arg1 != 0;
+                    mRadioPowered = msg.arg2 != 0;
+                    mCurFreq = msg.arg1;
+                    updateDisplayPanel(mCurFreq, updatePresetSwitcher());
                     break;
                 case MSG_TUNE_FINISHED:
                     mCurFreq = msg.arg1;
@@ -356,8 +359,8 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     private IFMRadioPlayerServiceCallbacks.Stub mServiceCallbacks = new IFMRadioPlayerServiceCallbacks.Stub() {
         @Override
-        public void onEnabled(boolean success) {
-            Message msg = Message.obtain(mHandler, MSG_POWERON_COMPLETE, success ? 1 : 0, 0, null);
+        public void onEnabled(boolean success, int newFrequency) {
+            Message msg = Message.obtain(mHandler, MSG_POWERON_COMPLETE, newFrequency, success ? 1 : 0, null);
             mHandler.sendMessage(msg);
         }
 
@@ -437,7 +440,7 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
         setVolumeControlStream(AudioManager.STREAM_FM);
 
         mAM = (AudioManager) getSystemService(AUDIO_SERVICE);
-        mCurFreq = Preferences.getLastFrequency(this);
+        mCurFreq = 0;
 
         initUI();
         mIsBound = bindToService();
@@ -1112,6 +1115,9 @@ public class FMRadioMain extends Activity implements SeekBar.OnSeekBarChangeList
 
     private void updateFrequencyDisplay(int currentFreq, boolean isEditEnable) {
         if (currentFreq < FMUtil.MIN_FREQUENCY || currentFreq > FMUtil.MAX_FREQUENCY) {
+            for (ImageSwitcher digit : mFreqDigits) {
+                digit.setImageDrawable(null);
+            }
             return;
         }
 

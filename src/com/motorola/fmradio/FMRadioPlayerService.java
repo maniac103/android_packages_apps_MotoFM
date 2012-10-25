@@ -403,6 +403,11 @@ public class FMRadioPlayerService extends Service {
             }
             return result;
         }
+
+        @Override
+        public int getCurrentFrequency() {
+            return mCurFreq;
+        }
     };
 
     private final Handler mHandler = new Handler() {
@@ -1055,7 +1060,7 @@ public class FMRadioPlayerService extends Service {
         if (mCallbacks != null) {
             try {
                 if (enabled) {
-                    mCallbacks.onEnabled(success);
+                    mCallbacks.onEnabled(success, mCurFreq);
                 } else {
                     mCallbacks.onDisabled();
                 }

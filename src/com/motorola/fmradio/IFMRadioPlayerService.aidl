@@ -9,6 +9,7 @@ interface IFMRadioPlayerService {
     boolean tune(int freq);
     boolean seek(int freq, boolean upward);
     boolean stopSeek();
+    int getCurrentFrequency();
 
     boolean scan();
     boolean stopScan();
