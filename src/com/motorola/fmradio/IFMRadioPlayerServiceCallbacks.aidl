@@ -1,7 +1,7 @@
 package com.motorola.fmradio;
 
 interface IFMRadioPlayerServiceCallbacks {
-    void onEnabled(boolean success);
+    void onEnabled(boolean success, int newFrequency);
     void onDisabled();
 
     void onTuneChanged(boolean success, int newFrequency);

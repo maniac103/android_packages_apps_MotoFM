@@ -177,7 +177,7 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
     private String mRdsRadioText;
     private int mRdsPTYValue;
 
-    private int mCurFreq = FMUtil.MIN_FREQUENCY;
+    private int mCurFreq = 0;
     private int mPreFreq = FMUtil.MIN_FREQUENCY;
     private boolean mRadioPowered = false;
     private boolean mSpeakerEnabled = false;
@@ -279,10 +279,11 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
             try {
                 mRadioPowered = mService.isPowered();
                 mSpeakerEnabled = mService.getAudioRouting() != FMRadioPlayerService.FM_ROUTING_HEADSET;
+                mCurFreq = mService.getCurrentFrequency();
             } catch (RemoteException e) {
                 Log.e(TAG, "Could not get power state", e);
             }
-            updateDisplayPanel();
+            updateUI();
             invalidateOptionsMenu();
         }
 
@@ -301,15 +302,16 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
 
             switch (msg.what) {
                 case MSG_POWERON_COMPLETE:
-                    if (msg.arg1 != 0) {
+                    if (msg.arg2 != 0) {
                         Log.d(TAG, "FM radio powered on successfully");
                         dismissDialog(DIALOG_POWERON);
                         if (!Preferences.isScanned(context) && isDBEmpty()) {
                             showDialog(DIALOG_IF_SCAN_FIRST);
                         }
                     }
-                    mRadioPowered = msg.arg1 != 0;
-                    Log.d(TAG, "MSG_POWERON_COMPLETE, arg " + msg.arg1 + " powered " + mRadioPowered);
+                    mRadioPowered = msg.arg2 != 0;
+                    mCurFreq = msg.arg1;
+                    Log.d(TAG, "MSG_POWERON_COMPLETE, powered " + mRadioPowered + ", frequency " + mCurFreq);
                     invalidateOptionsMenu();
                     updateUI();
                     break;
@@ -388,8 +390,8 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
 
     private IFMRadioPlayerServiceCallbacks.Stub mServiceCallbacks = new IFMRadioPlayerServiceCallbacks.Stub() {
         @Override
-        public void onEnabled(boolean success) {
-            Message msg = Message.obtain(mHandler, MSG_POWERON_COMPLETE, success ? 1 : 0, 0, null);
+        public void onEnabled(boolean success, int newFrequency) {
+            Message msg = Message.obtain(mHandler, MSG_POWERON_COMPLETE, newFrequency, success ? 1 : 0, null);
             mHandler.sendMessage(msg);
         }
 
@@ -470,7 +472,6 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
         setVolumeControlStream(AudioManager.STREAM_FM);
 
         mAM = (AudioManager) getSystemService(AUDIO_SERVICE);
-        mCurFreq = Preferences.getLastFrequency(this);
 
         initUI();
         updateUI();
@@ -1204,6 +1205,9 @@ public class FMRadioMain extends ListActivity implements SeekBar.OnSeekBarChange
 
     private void updateFrequencyDisplay() {
         if (mCurFreq < FMUtil.MIN_FREQUENCY || mCurFreq > FMUtil.MAX_FREQUENCY) {
+            for (ImageSwitcher digit : mFreqDigits) {
+                digit.setImageDrawable(null);
+            }
             return;
         }
 
